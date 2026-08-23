@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mini Authenticator</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <strong>Authenticator</strong>
+        <p>Codes stay on this device.</p>
+      </div>
+      <button id="add-toggle" type="button">Add</button>
+    </header>
+
+    <form id="add-form" hidden>
+      <label>
+        Secret or otpauth URI
+        <input id="secret" name="secret" required placeholder="otpauth://totp/… or JBSWY3DPEHPK3PXP" />
+      </label>
+      <label>
+        Issuer
+        <input id="issuer" name="issuer" placeholder="GitHub" />
+      </label>
+      <label>
+        Account
+        <input id="label" name="label" placeholder="you@example.com" />
+      </label>
+      <p id="form-error" class="error" hidden></p>
+      <div class="row">
+        <button type="submit">Save</button>
+        <button id="demo" type="button" class="ghost">Load demo</button>
+      </div>
+    </form>
+
+    <div id="empty" class="empty">
+      No accounts yet. Add a TOTP secret to sign in from a clean Mini session.
+    </div>
+    <ul id="list"></ul>
+
+    <script src="totp.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
