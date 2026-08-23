@@ -2,12 +2,14 @@
 
 Thanks for helping with a small, hackable Chromium browser.
 
+Canonical remote is Origin: [puvaanraaj/tmp-fb57f3438b1f4856](https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856). Install the [Origin CLI](https://origin.cursor.com) (`origin`) so you can clone and open pull requests.
+
 ## Setup (macOS)
 
 You need Node 20+ and Xcode command line tools.
 
 ```bash
-git clone https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856.git mini-browser
+origin repo clone puvaanraaj/tmp-fb57f3438b1f4856 mini-browser
 cd mini-browser
 npm install
 npm run dev
@@ -36,9 +38,16 @@ Pages run in an **in-memory** Chromium partition. Authenticator secrets stay in 
 
 ## Pull requests
 
+Work on a branch, then open a change against `main`:
+
+```bash
+git checkout -b your-change
+git commit -am "Describe the change"
+git push -u origin your-change
+origin pr create --title "Describe the change" --body "What you changed and how you tried it."
+```
+
 - Keep the chrome thin. New features should earn their pixels.
 - Match the existing TypeScript / React style.
 - Do not persist guest-session cookies by default.
 - Do not send authenticator secrets off-device.
-
-Open a PR against `main` with a short description of the change and how you tried it (`npm run dev` is enough for UI work).

@@ -4,13 +4,27 @@ A personal Chromium browser for macOS: fresh session, thin chrome, Orion-style f
 
 Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
 
+**Repository:** [puvaanraaj/tmp-fb57f3438b1f4856](https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856) on [Origin](https://origin.cursor.com)
+
 License: [Apache-2.0](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Run on a Mac
+## Clone
+
+```bash
+origin repo clone puvaanraaj/tmp-fb57f3438b1f4856 mini-browser
+cd mini-browser
+```
+
+Or HTTPS:
 
 ```bash
 git clone https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856.git mini-browser
 cd mini-browser
+```
+
+## Run on a Mac
+
+```bash
 npm install
 npm run dev
 ```
@@ -23,20 +37,6 @@ open release/mac/Mini.app
 ```
 
 The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
-
-### Publish your own public GitHub copy
-
-This cloud workspace cannot create GitHub repositories. From the clone on your Mac:
-
-```bash
-gh repo create mini-browser --public \
-  --description "Mini — a personal Chromium browser for macOS" \
-  --source . \
-  --remote github \
-  --push
-```
-
-Then point clones at `https://github.com/<you>/mini-browser`.
 
 ## Why this exists
 
