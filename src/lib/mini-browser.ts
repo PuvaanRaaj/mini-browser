@@ -79,6 +79,7 @@ export class MiniBrowser extends EventEmitter {
   private extensionLoaded = false;
   private viewport = { width: 1280, height: 800 };
   private starting: Promise<void> | null = null;
+  private expectingPage = false;
 
   getState(): BrowserState {
     return {
@@ -342,10 +343,15 @@ export class MiniBrowser extends EventEmitter {
   private async ensurePage(tab: TabRecord): Promise<Page> {
     if (tab.page && !tab.page.isClosed()) return tab.page;
     if (!this.context) throw new Error("Chromium is not running.");
-    const page = await this.context.newPage();
-    await page.setViewportSize(this.viewport);
-    this.bindPage(tab, page);
-    return page;
+    this.expectingPage = true;
+    try {
+      const page = await this.context.newPage();
+      await page.setViewportSize(this.viewport);
+      this.bindPage(tab, page);
+      return page;
+    } finally {
+      this.expectingPage = false;
+    }
   }
 
   private bindPage(tab: TabRecord, page: Page): void {
@@ -373,6 +379,7 @@ export class MiniBrowser extends EventEmitter {
   }
 
   private async adoptPopup(page: Page): Promise<void> {
+    if (this.expectingPage) return;
     if ([...this.tabs.values()].some((tab) => tab.page === page)) return;
     const tab = this.createStartTab(true);
     tab.isStartPage = false;
