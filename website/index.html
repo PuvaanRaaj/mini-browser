@@ -906,6 +906,8 @@
         }
 
         function render() {
+          // Homebrew is only a valid install method on macOS.
+          if (platform !== "mac" && method === "homebrew") method = "curl";
           // platform pills
           document.querySelectorAll("[data-platform-btn]").forEach(function (b) {
             var selected = b.dataset.platformBtn === platform;
@@ -914,9 +916,14 @@
           });
           // method tabs
           document.querySelectorAll("[data-method-tab]").forEach(function (b) {
+            var homebrew = b.dataset.methodTab === "homebrew";
+            var hidden = homebrew && platform !== "mac";
             var selected = b.dataset.methodTab === method;
+            b.hidden = hidden;
             b.classList.toggle("active", selected);
             b.setAttribute("aria-selected", String(selected));
+            b.setAttribute("aria-hidden", String(hidden));
+            b.tabIndex = hidden ? -1 : 0;
           });
           // primary CTA
           if (platform === "mac") {
