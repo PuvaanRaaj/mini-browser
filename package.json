@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "license": "Apache-2.0",
-  "description": "Minimal — a personal Chromium browser for macOS, with focus mode and a built-in TOTP authenticator.",
+  "description": "Minimal — a personal Chromium browser, with focus mode and a built-in TOTP authenticator.",
   "author": "Minimal contributors",
   "repository": {
     "type": "git",
@@ -24,7 +24,8 @@
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "electron-vite preview",
     "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "dist:win": "electron-vite build && electron-builder --win"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -89,6 +90,35 @@
       "owner": "PuvaanRaaj",
       "repo": "mini-browser",
       "releaseType": "release"
+    },
+    "win": {
+      "icon": "resources/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName} Setup ${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Minimal"
+    },
+    "portable": {
+      "artifactName": "${productName}.${ext}"
     }
   }
 }
