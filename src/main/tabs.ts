@@ -211,7 +211,9 @@ export class MiniSession {
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
-        sandbox: true,
+        // WSL2 kernels reject the shared-memory calls Chromium's renderer sandbox
+        // needs, which crashes every tab. Keep the sandbox everywhere else.
+        sandbox: process.platform !== "linux",
         contextIsolation: true,
         nodeIntegration: false,
       },

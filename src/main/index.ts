@@ -9,6 +9,9 @@ import { MiniSession, routeBrowserShortcut } from "./tabs";
 
 if (process.platform === "linux") {
   app.commandLine.appendSwitch("no-sandbox");
+  // WSL2 hands out a /dev/shm that Chromium's renderers cannot map; fall back to
+  // temp files so pages render instead of dying on startup.
+  app.commandLine.appendSwitch("disable-dev-shm-usage");
 }
 
 let mainWindow: BrowserWindow | null = null;
