@@ -31,7 +31,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
 @MainActor
 final class BrowserWindowController: NSWindowController, WKNavigationDelegate, WKUIDelegate,
-    NSSearchFieldDelegate
+    NSSearchFieldDelegate, NSWindowDelegate
 {
     private let rootView = NSView()
     private let contentView = NSView()
@@ -41,6 +41,8 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
     private let forwardButton = NSButton()
     private let reloadButton = NSButton()
     private var pageView: WKWebView?
+    private var isLoading = false
+    private var keyMonitor: Any?
 
     convenience init() {
         let window = NSWindow(
@@ -61,9 +63,35 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
         super.windowDidLoad()
         guard let window else { return }
 
+        window.delegate = self
         configureViews()
         window.contentView = rootView
         window.makeFirstResponder(omnibox)
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, event.modifierFlags.contains(.command),
+                  let key = event.charactersIgnoringModifiers?.lowercased() else { return event }
+            switch key {
+            case "l":
+                self.focusOmnibox()
+                return nil
+            case "r":
+                self.reload()
+                return nil
+            case "[":
+                self.goBack()
+                return nil
+            case "]":
+                self.goForward()
+                return nil
+            default:
+                return event
+            }
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+        keyMonitor = nil
     }
 
     private func configureViews() {
@@ -108,7 +136,7 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
         let wordmark = NSTextField(labelWithString: "Minimal")
         wordmark.font = .systemFont(ofSize: 30, weight: .semibold)
         wordmark.alignment = .center
-        let promise = NSTextField(labelWithString: "A fast, private browser that gets out of the way.")
+        let promise = NSTextField(labelWithString: "A keyboard-first browser beta that gets out of the way.")
         promise.font = .systemFont(ofSize: 14)
         promise.textColor = .secondaryLabelColor
         promise.alignment = .center
@@ -155,6 +183,11 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
         navigate(to: destination)
     }
 
+    private func focusOmnibox() {
+        window?.makeFirstResponder(omnibox)
+        omnibox.selectText(nil)
+    }
+
     private func navigate(to url: URL) {
         let webView = ensurePageView()
         omnibox.stringValue = url.absoluteString
@@ -199,7 +232,11 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
     }
 
     @objc private func reload() {
-        pageView?.reload()
+        if isLoading {
+            pageView?.stopLoading()
+        } else {
+            pageView?.reload()
+        }
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector)
@@ -211,12 +248,14 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        isLoading = true
         updateNavigationControls()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         omnibox.stringValue = webView.url?.absoluteString ?? omnibox.stringValue
         window?.title = webView.title ?? "Minimal"
+        isLoading = false
         updateNavigationControls()
     }
 
@@ -225,7 +264,26 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
         didFailProvisionalNavigation navigation: WKNavigation!,
         withError error: Error
     ) {
+        isLoading = false
         updateNavigationControls()
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+        // Keep ordinary web popups in the single native tab. Never create a
+        // second untracked web view or expose a native window to page content.
+        guard navigationAction.targetFrame == nil,
+              let url = navigationAction.request.url,
+              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+            if let url = navigationAction.request.url { NSWorkspace.shared.open(url) }
+            return nil
+        }
+        webView.load(navigationAction.request)
+        return nil
     }
 
     func webView(
@@ -259,6 +317,12 @@ final class BrowserWindowController: NSWindowController, WKNavigationDelegate, W
         backButton.isEnabled = pageView?.canGoBack ?? false
         forwardButton.isEnabled = pageView?.canGoForward ?? false
         reloadButton.isEnabled = pageView != nil
+        reloadButton.image = NSImage(
+            systemSymbolName: isLoading ? "xmark" : "arrow.clockwise",
+            accessibilityDescription: isLoading ? "Stop" : "Reload"
+        )
+        reloadButton.toolTip = isLoading ? "Stop" : "Reload"
+        reloadButton.setAccessibilityLabel(isLoading ? "Stop" : "Reload")
     }
 }
 
