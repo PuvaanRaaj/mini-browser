@@ -349,6 +349,35 @@ body,
   app-region: drag;
 }
 
+/* The start page borrows the landing site's palette: near-black with a faint
+   dot grid. Scoped to .mini-start so the browsing chrome stays white. */
+.mini-start {
+  background-color: #0a0a0b;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.055) 1px,
+    transparent 0
+  );
+  background-size: 30px 30px;
+}
+
+/* A soft pool of light behind the search field. */
+.mini-start::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(760px, 90%);
+  height: 420px;
+  content: "";
+  transform: translate(-50%, -58%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.055),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
 .mini-start-inner {
   display: flex;
   width: min(560px, 100%);
@@ -468,6 +497,76 @@ body,
 
 .mini-start-corner .mini-corner-ext {
   position: static;
+}
+
+.mini-start .mini-start-ring {
+  border-color: #fafafa;
+}
+
+.mini-start .mini-start-word {
+  color: #fafafa;
+}
+
+.mini-start .mini-start-greeting {
+  color: #7c7c85;
+}
+
+.mini-start .mini-omnibox {
+  border: 1px solid #232327;
+  background: #121214;
+  color: #fafafa;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.mini-start .mini-omnibox::placeholder {
+  color: #7c7c85;
+}
+
+.mini-start .mini-omnibox:focus {
+  border-color: #34343a;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.mini-start .mini-start-tile:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.mini-start .mini-start-tile-badge {
+  border: 1px solid #232327;
+  background: #17171b;
+  color: #a1a1aa;
+}
+
+.mini-start .mini-start-tile-title {
+  color: #a1a1aa;
+}
+
+.mini-start .mini-start-empty {
+  color: #7c7c85;
+}
+
+.mini-start .mini-start-hints {
+  color: #7c7c85;
+}
+
+.mini-start .mini-start-hints kbd {
+  color: #d4d4d8;
+}
+
+.mini-start .mini-corner-ext {
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
+  box-shadow: none;
+}
+
+.mini-start .mini-corner-ext:hover {
+  background: #1b1b1f;
+  color: #fafafa;
 }
 
 .mini-omnibox-form {

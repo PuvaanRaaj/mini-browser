@@ -115,6 +115,12 @@ export function MiniApp() {
     saveSession(state.tabs.filter((tab) => !tab.isStartPage).map((tab) => tab.url));
   }, [sessionReady, settings.restoreSession, state.tabs]);
 
+  // The start page is dark and the browsing chrome is white; keep the native
+  // caption buttons on whichever one is actually on screen.
+  useEffect(() => {
+    window.mini?.chromeTheme(showChrome ? "light" : "dark");
+  }, [showChrome]);
+
   useEffect(() => {
     if (showStart && showChrome) urlRef.current?.focus();
   }, [showStart, showChrome]);
