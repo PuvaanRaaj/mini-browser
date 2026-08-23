@@ -292,6 +292,10 @@ export function MiniApp() {
               onBookmark={toggleBookmark}
               onFavorites={() => setFavoritesPanelOpen((value) => !value)}
               onSettings={() => setSettingsOpen((value) => !value)}
+              onBack={() => dispatch({ type: "back" })}
+              onForward={() => dispatch({ type: "forward" })}
+              onReload={() => dispatch({ type: "reload" })}
+              onFocusMode={() => setFocusMode(true)}
             />
 
             {showFavoritesBar ? (

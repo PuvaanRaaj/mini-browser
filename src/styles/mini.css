@@ -123,6 +123,25 @@ body,
   height: 11px;
 }
 
+.mini-nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-icon-btn:disabled {
+  color: #d4d4d8;
+  cursor: default;
+}
+
+.mini-icon-btn:disabled:hover {
+  background: transparent;
+  color: #d4d4d8;
+}
+
 .mini-url-form {
   min-width: 0;
   flex: 1;
