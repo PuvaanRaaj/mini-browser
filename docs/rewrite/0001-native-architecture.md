@@ -43,6 +43,10 @@ The Rust core owns:
 - content-rule normalization and fallback matching;
 - typed agent contracts and benchmark schemas.
 
+The native shells may call only the audited `minimal-ffi` C ABI for pure core
+helpers. It currently exports UTF-8 omnibox resolution and buffer release; it
+does not expose page content, browser handles, or secrets.
+
 Platform shells own:
 
 - window, control, accessibility, menu, and keyboard behavior;

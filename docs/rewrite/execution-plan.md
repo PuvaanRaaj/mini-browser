@@ -20,6 +20,8 @@ marker.
 
 - Create the Rust workspace and native AppKit and Win32 hosts.
 - Display a focusable native omnibox/new-tab shell before page-engine startup.
+- Route macOS omnibox resolution through the narrow `minimal-ffi` C ABI; keep
+  the ABI limited to pure UTF-8 navigation helpers.
 - Add Rust format, Clippy, test, macOS build, Windows build, and security-boundary
   checks to CI.
 
@@ -29,7 +31,8 @@ no privileged bridge.
 ## Phase 2: pure Rust capabilities
 
 - Implement core state, URL resolution, storage, migration, blocker, OTP,
-  Firefox Authenticator migration, typed agent contracts, and benchmark schema.
+  Firefox Authenticator migration, typed agent contracts, benchmark schemas, and
+  the native-shell FFI boundary.
 - Run legacy TypeScript and Rust behavior against shared fixtures while the
   legacy implementation exists.
 

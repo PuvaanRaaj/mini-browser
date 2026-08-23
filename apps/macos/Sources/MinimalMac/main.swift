@@ -266,19 +266,33 @@ enum NavigationInput {
     static func resolve(_ raw: String) -> URL? {
         let input = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return nil }
-
-        if let explicit = URL(string: input), let scheme = explicit.scheme, !scheme.isEmpty {
-            return explicit
+        let inputBytes = Array(input.utf8)
+        var output: UnsafeMutablePointer<UInt8>?
+        var outputLength = 0
+        let status = inputBytes.withUnsafeBufferPointer { buffer in
+            minimal_resolve_navigation(
+                buffer.baseAddress,
+                buffer.count,
+                &output,
+                &outputLength
+            )
         }
-
-        let looksLikeHost = !input.contains(" ")
-            && (input.contains(".") || input == "localhost" || input.hasPrefix("localhost:"))
-        if looksLikeHost {
-            return URL(string: "https://\(input)")
-        }
-
-        var components = URLComponents(string: "https://duckduckgo.com/")
-        components?.queryItems = [URLQueryItem(name: "q", value: input)]
-        return components?.url
+        guard status == 0, let output else { return nil }
+        defer { minimal_free_buffer(output, outputLength) }
+        let bytes = UnsafeBufferPointer(start: output, count: outputLength)
+        return String(decoding: bytes, as: UTF8.self).isEmpty
+            ? nil
+            : URL(string: String(decoding: bytes, as: UTF8.self))
     }
 }
+
+@_silgen_name("minimal_resolve_navigation")
+private func minimal_resolve_navigation(
+    _ input: UnsafePointer<UInt8>?,
+    _ inputLength: Int,
+    _ output: UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>,
+    _ outputLength: UnsafeMutablePointer<Int>
+) -> Int32
+
+@_silgen_name("minimal_free_buffer")
+private func minimal_free_buffer(_ buffer: UnsafeMutablePointer<UInt8>, _ length: Int)

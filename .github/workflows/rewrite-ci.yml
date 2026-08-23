@@ -31,7 +31,9 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - run: swift build --package-path apps/macos
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build -p minimal-ffi
+      - run: MINIMAL_RUST_LIB_DIR="$PWD/target/debug" swift build --package-path apps/macos
 
   windows-shell:
     name: Windows native shell (${{ matrix.arch }})

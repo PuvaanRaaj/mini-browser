@@ -399,6 +399,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "minimal-ffi"
+version = "0.1.0"
+dependencies = [
+ "minimal-core",
+]
+
+[[package]]
 name = "minimal-storage"
 version = "0.1.0"
 dependencies = [

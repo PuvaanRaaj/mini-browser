@@ -5,9 +5,10 @@ is native and appears before a page webview is created. The first page
 navigation creates a WKWebView using a nonpersistent WKWebsiteDataStore and no
 native message handlers.
 
-Development build:
+Development build (the shared Rust FFI library must be built first):
 
 ```bash
+cargo build -p minimal-ffi
 swift build --package-path apps/macos
 ```
 
@@ -15,6 +16,5 @@ The current environment can compile the Swift package with Command Line Tools.
 Full Xcode is still required for `.app` packaging, UI tests, Developer ID
 signing, and notarization.
 
-The temporary Swift URL resolver will be replaced by the shared Rust core once
-the FFI boundary is established. It exists only to make the native one-tab
-vertical slice executable during Phase 1.
+The omnibox now resolves through the shared Rust core via the narrow FFI
+boundary. The ABI exposes no page handles, page content, or secret storage.
