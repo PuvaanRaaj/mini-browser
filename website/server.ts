@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Minimal — landing page server. Run with Bun:
+ * Minimal — local landing page server:
  *
  *   npm run site
  *
