@@ -9,7 +9,7 @@ declare global {
       layout: (rect: LayoutRect) => void;
       onState: (callback: (state: BrowserState) => void) => () => void;
       onFocusUrl: (callback: () => void) => () => void;
-      onToggle: (callback: (what: "focus" | "authenticator") => void) => () => void;
+      onToggle: (callback: (what: "focus" | "authenticator" | "sidebar" | "bookmark" | "favorites" | "settings") => void) => () => void;
     };
   }
 }

@@ -400,6 +400,22 @@ export function routeBrowserShortcut(
     window.webContents.send("mini:toggle", "focus");
     return true;
   }
+  if (cmd && key === ",") {
+    window.webContents.send("mini:toggle", "settings");
+    return true;
+  }
+  if (cmd && key === "d") {
+    window.webContents.send("mini:toggle", "bookmark");
+    return true;
+  }
+  if (cmd && input.shift && key === "b") {
+    window.webContents.send("mini:toggle", "favorites");
+    return true;
+  }
+  if (cmd && input.shift && key === "s") {
+    window.webContents.send("mini:toggle", "sidebar");
+    return true;
+  }
   if (cmd && input.shift && key === "a") {
     window.webContents.send("mini:toggle", "authenticator");
     return true;

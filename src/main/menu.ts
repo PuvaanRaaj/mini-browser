@@ -77,6 +77,18 @@ export function installMenu(getSession: () => MiniSession | null, getWindow: () 
           click: () => getWindow()?.webContents.send("mini:toggle", "focus"),
         },
         {
+          label: "Tabs on the Side",
+          accelerator: "CmdOrCtrl+Shift+S",
+          registerAccelerator: false,
+          click: () => getWindow()?.webContents.send("mini:toggle", "sidebar"),
+        },
+        {
+          label: "Settings",
+          accelerator: "CmdOrCtrl+,",
+          registerAccelerator: false,
+          click: () => getWindow()?.webContents.send("mini:toggle", "settings"),
+        },
+        {
           label: "Authenticator",
           accelerator: "CmdOrCtrl+Shift+A",
           registerAccelerator: false,
@@ -87,6 +99,23 @@ export function installMenu(getSession: () => MiniSession | null, getWindow: () 
         ...(process.env.NODE_ENV === "development" || !app.isPackaged
           ? [{ role: "toggleDevTools" as const }]
           : []),
+      ],
+    },
+    {
+      label: "Bookmarks",
+      submenu: [
+        {
+          label: "Add Favorite",
+          accelerator: "CmdOrCtrl+D",
+          registerAccelerator: false,
+          click: () => getWindow()?.webContents.send("mini:toggle", "bookmark"),
+        },
+        {
+          label: "Favorites Bar",
+          accelerator: "CmdOrCtrl+Shift+B",
+          registerAccelerator: false,
+          click: () => getWindow()?.webContents.send("mini:toggle", "favorites"),
+        },
       ],
     },
     {

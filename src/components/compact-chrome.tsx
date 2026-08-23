@@ -1,8 +1,17 @@
-import { KeyRoundIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import {
+  BookmarkIcon,
+  KeyRoundIcon,
+  PanelLeftIcon,
+  PanelTopIcon,
+  SettingsIcon,
+  ShieldCheckIcon,
+  StarIcon,
+} from "lucide-react";
 import { useState, type RefObject } from "react";
 
+import { TabStrip } from "@/components/tab-strip";
 import { modLabel } from "@/lib/mod";
-import type { TabInfo } from "@/lib/types";
+import type { FavoritesMode, TabInfo, TabPosition } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function CompactChrome({
@@ -12,11 +21,18 @@ export function CompactChrome({
   isMac,
   adblockEnabled,
   authenticatorOpen,
+  tabPosition,
+  bookmarked,
+  favoritesMode,
   onSelect,
   onClose,
   onNew,
   onNavigate,
   onAuthenticator,
+  onTabPosition,
+  onBookmark,
+  onFavorites,
+  onSettings,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
@@ -24,67 +40,36 @@ export function CompactChrome({
   isMac: boolean;
   adblockEnabled: boolean;
   authenticatorOpen: boolean;
+  tabPosition: TabPosition;
+  bookmarked: boolean;
+  favoritesMode: FavoritesMode;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;
   onNavigate: (value: string) => void;
   onAuthenticator: () => void;
+  onTabPosition: () => void;
+  onBookmark: () => void;
+  onFavorites: () => void;
+  onSettings: () => void;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
   const shown = focused ? draft : (activeTab?.isStartPage ? "" : (activeTab?.url ?? ""));
-  const visibleTabs = tabs.filter((tab) => !tab.isStartPage || tabs.length > 1);
   const mod = modLabel();
 
   return (
     <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
-      <div className="mini-tabs" data-agent="tabs">
-        {visibleTabs.map((tab) => {
-          const active = tab.id === activeTab?.id;
-          return (
-            <div
-              key={tab.id}
-              className={cn("mini-tab", active && "mini-tab-active")}
-            >
-              <button
-                type="button"
-                className="mini-tab-label"
-                data-agent="tab"
-                data-tab-id={tab.id}
-                onClick={() => onSelect(tab.id)}
-              >
-                <span className="mini-tab-title">
-                  {tab.loading ? "Loading…" : tab.title || "New tab"}
-                </span>
-              </button>
-              {tabs.length > 1 ? (
-                <button
-                  type="button"
-                  className="mini-tab-close"
-                  data-agent="close-tab"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onClose(tab.id);
-                  }}
-                  aria-label="Close tab"
-                >
-                  <XIcon />
-                </button>
-              ) : null}
-            </div>
-          );
-        })}
-        <button
-          type="button"
-          className="mini-icon-btn"
-          data-agent="new-tab"
-          onClick={onNew}
-          title={`New tab (${mod}+T)`}
-          aria-label="New tab"
-        >
-          <PlusIcon />
-        </button>
-      </div>
+      {tabPosition === "top" ? (
+        <TabStrip
+          tabs={tabs}
+          activeTab={activeTab}
+          position="top"
+          onSelect={onSelect}
+          onClose={onClose}
+          onNew={onNew}
+        />
+      ) : null}
 
       <form
         className="mini-url-form"
@@ -118,6 +103,40 @@ export function CompactChrome({
       <div className="mini-ext-tray">
         <button
           type="button"
+          className={cn("mini-icon-btn", bookmarked && "mini-icon-btn-active")}
+          onClick={onBookmark}
+          title={bookmarked ? `Remove favorite (${mod}+D)` : `Add favorite (${mod}+D)`}
+          aria-label="Favorite this page"
+          aria-pressed={bookmarked}
+        >
+          <StarIcon fill={bookmarked ? "currentColor" : "none"} />
+        </button>
+        {favoritesMode === "never" ? (
+          <button
+            type="button"
+            className="mini-icon-btn"
+            onClick={onFavorites}
+            title={`Favorites (${mod}+Shift+B)`}
+            aria-label="Favorites"
+          >
+            <BookmarkIcon />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onTabPosition}
+          title={
+            tabPosition === "side"
+              ? `Tabs on top (${mod}+Shift+S)`
+              : `Tabs on the side (${mod}+Shift+S)`
+          }
+          aria-label="Toggle tab position"
+        >
+          {tabPosition === "side" ? <PanelTopIcon /> : <PanelLeftIcon />}
+        </button>
+        <button
+          type="button"
           className="mini-icon-btn"
           data-agent="ad-blocker-status"
           title={adblockEnabled ? "Blocking ads and trackers" : "Ad blocker starting…"}
@@ -134,6 +153,15 @@ export function CompactChrome({
           aria-label="Authenticator"
         >
           <KeyRoundIcon />
+        </button>
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onSettings}
+          title={`Settings (${mod}+,)`}
+          aria-label="Settings"
+        >
+          <SettingsIcon />
         </button>
       </div>
     </header>
