@@ -1,8 +1,12 @@
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
   BookmarkIcon,
+  EyeIcon,
   KeyRoundIcon,
   PanelLeftIcon,
   PanelTopIcon,
+  RotateCwIcon,
   SettingsIcon,
   ShieldCheckIcon,
   StarIcon,
@@ -33,6 +37,10 @@ export function CompactChrome({
   onBookmark,
   onFavorites,
   onSettings,
+  onBack,
+  onForward,
+  onReload,
+  onFocusMode,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
@@ -52,6 +60,10 @@ export function CompactChrome({
   onBookmark: () => void;
   onFavorites: () => void;
   onSettings: () => void;
+  onBack: () => void;
+  onForward: () => void;
+  onReload: () => void;
+  onFocusMode: () => void;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
@@ -70,6 +82,38 @@ export function CompactChrome({
           onNew={onNew}
         />
       ) : null}
+
+      <div className="mini-nav">
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onBack}
+          disabled={!activeTab?.canGoBack}
+          title={`Back (${mod}+[)`}
+          aria-label="Back"
+        >
+          <ArrowLeftIcon />
+        </button>
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onForward}
+          disabled={!activeTab?.canGoForward}
+          title={`Forward (${mod}+])`}
+          aria-label="Forward"
+        >
+          <ArrowRightIcon />
+        </button>
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onReload}
+          title={`Reload (${mod}+R)`}
+          aria-label="Reload"
+        >
+          <RotateCwIcon />
+        </button>
+      </div>
 
       <form
         className="mini-url-form"
@@ -153,6 +197,15 @@ export function CompactChrome({
           aria-label="Authenticator"
         >
           <KeyRoundIcon />
+        </button>
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onFocusMode}
+          title={`Focus mode — hides this bar, ${mod}+Shift+F to bring it back`}
+          aria-label="Focus mode"
+        >
+          <EyeIcon />
         </button>
         <button
           type="button"

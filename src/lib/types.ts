@@ -6,6 +6,8 @@ export type TabInfo = {
   canGoBack: boolean;
   canGoForward: boolean;
   isStartPage: boolean;
+  /** The page's own icon, inlined as a data URL. */
+  favicon: string | null;
   error: string | null;
 };
 
@@ -23,6 +25,7 @@ export type Bookmark = {
   id: string;
   url: string;
   title: string;
+  favicon: string | null;
   createdAt: number;
 };
 

@@ -10,6 +10,9 @@ const mini = {
   layout: (rect: LayoutRect): void => {
     ipcRenderer.send("mini:layout", rect);
   },
+  chromeTheme: (theme: "light" | "dark"): void => {
+    ipcRenderer.send("mini:chrome-theme", theme);
+  },
   onState: (callback: (state: BrowserState) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, state: BrowserState) => callback(state);
     ipcRenderer.on("mini:state", listener);

@@ -25,9 +25,9 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-t border-neutral-100 px-4 py-3 first:border-t-0">
-      <p className="text-[13px] font-medium text-neutral-900">{title}</p>
-      <p className="mt-0.5 text-[11px] leading-relaxed text-neutral-500">{hint}</p>
+    <div className="border-t border-border px-4 py-3 first:border-t-0">
+      <p className="text-[13px] font-medium text-foreground">{title}</p>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{hint}</p>
       <div className="mt-2.5">{children}</div>
     </div>
   );
@@ -43,7 +43,7 @@ function Segmented<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <div className="inline-flex gap-1 rounded-lg bg-neutral-100 p-0.5">
+    <div className="inline-flex gap-1 rounded-lg bg-muted p-0.5">
       {options.map((option) => (
         <button
           key={option.value}
@@ -52,8 +52,8 @@ function Segmented<T extends string>({
           className={cn(
             "rounded-[7px] px-3 py-1 text-[12px] transition-colors",
             option.value === value
-              ? "bg-white text-neutral-900 shadow-sm"
-              : "text-neutral-500 hover:text-neutral-800",
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {option.label}
@@ -78,8 +78,8 @@ export function SettingsPanel({
     <aside className="mini-sheet">
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
         <div>
-          <p className="text-sm font-medium text-neutral-900">Settings</p>
-          <p className="mt-0.5 text-[11px] text-neutral-500">
+          <p className="text-sm font-medium text-foreground">Settings</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             Kept on this device.
           </p>
         </div>
@@ -109,7 +109,7 @@ export function SettingsPanel({
           title="Continue where you left off"
           hint="Reopen last session's tabs at launch. Pages reload fresh — cookies and logins are never kept."
         >
-          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-neutral-700">
+          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-foreground">
             <input
               type="checkbox"
               className="size-3.5 accent-neutral-900"

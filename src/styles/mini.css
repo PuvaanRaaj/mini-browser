@@ -6,8 +6,8 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -23,8 +23,8 @@ body,
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
 }
 
 .mini-chrome {
@@ -35,7 +35,7 @@ body,
   gap: 8px;
   height: 44px;
   padding: 0 12px 0 10px;
-  background: #ffffff;
+  background: #0a0a0b;
   -webkit-app-region: drag;
   app-region: drag;
 }
@@ -63,8 +63,8 @@ body,
   align-items: center;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f3f3f5;
-  color: #5c5c62;
+  background: #17171b;
+  color: #a1a1aa;
 }
 
 .mini-tab:has(.mini-tab-close) {
@@ -72,7 +72,8 @@ body,
 }
 
 .mini-tab-active {
-  color: #3f3f46;
+  background: #232327;
+  color: #fafafa;
 }
 
 .mini-tab-label {
@@ -87,6 +88,30 @@ body,
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.mini-site-icon {
+  display: flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #232327;
+  color: #a1a1aa;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.mini-site-icon-img {
+  background: transparent;
+  object-fit: contain;
+}
+
+.mini-tab-label {
+  gap: 7px;
 }
 
 .mini-tab-title {
@@ -114,13 +139,32 @@ body,
 }
 
 .mini-tab-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
 }
 
 .mini-tab-close svg {
   width: 11px;
   height: 11px;
+}
+
+.mini-nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-icon-btn:disabled {
+  color: #3f3f46;
+  cursor: default;
+}
+
+.mini-icon-btn:disabled:hover {
+  background: transparent;
+  color: #3f3f46;
 }
 
 .mini-url-form {
@@ -138,15 +182,16 @@ body,
   padding: 0 12px;
   border: 0;
   border-radius: 8px;
-  background: #f3f3f5;
-  color: #52525b;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #fafafa;
   font-size: 13px;
   letter-spacing: -0.01em;
   outline: none;
 }
 
 .mini-url::placeholder {
-  color: #c4c4c8;
+  color: #7c7c85;
 }
 
 .mini-preview-frame {
@@ -163,7 +208,7 @@ body,
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  background: #ffffff;
+  background: #0a0a0b;
 }
 
 .mini-favorites {
@@ -174,7 +219,7 @@ body,
   gap: 2px;
   overflow-x: auto;
   padding: 0 10px 6px;
-  background: #ffffff;
+  background: #0a0a0b;
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -207,11 +252,11 @@ body,
   flex-shrink: 0;
   align-items: center;
   border-radius: 7px;
-  color: #5c5c62;
+  color: #a1a1aa;
 }
 
 .mini-fav:hover {
-  background: #f3f3f5;
+  background: #17171b;
 }
 
 .mini-fav-label {
@@ -235,8 +280,8 @@ body,
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  background: #ececef;
-  color: #6b6b73;
+  background: #232327;
+  color: #a1a1aa;
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -271,8 +316,8 @@ body,
 }
 
 .mini-fav-remove:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
 }
 
 .mini-fav-remove svg {
@@ -287,16 +332,76 @@ body,
   min-width: 0;
 }
 
+/* A rail of icons that widens to show titles while the pointer is on it.
+   Nothing may paint over a native page view, so widening reflows the page
+   rather than floating above it. */
 .mini-sidebar {
   box-sizing: border-box;
   z-index: 20;
   display: flex;
-  width: 188px;
+  width: 48px;
   flex-shrink: 0;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 4px 8px 8px;
-  background: #ffffff;
+  background: #0a0a0b;
+  transition: width 140ms ease;
+}
+
+.mini-sidebar:hover {
+  width: 216px;
+}
+
+/* Collapsed: centre the icon and hide the label without unmounting it, so the
+   width transition has something to reveal. */
+.mini-sidebar .mini-tab-title {
+  opacity: 0;
+  transition: opacity 110ms ease;
+}
+
+.mini-sidebar:hover .mini-tab-title {
+  opacity: 1;
+}
+
+.mini-sidebar .mini-tab-close {
+  width: 0;
+  overflow: hidden;
+  transition: width 140ms ease;
+}
+
+.mini-sidebar:hover .mini-tab-close {
+  width: 20px;
+}
+
+.mini-sidebar .mini-tab-label {
+  gap: 10px;
+}
+
+/* .mini-icon-btn is declared later in this file and would otherwise win the
+   28px width at equal specificity, clipping the label. */
+.mini-sidebar .mini-new-tab-side {
+  width: 200px;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 28px;
+  padding: 0 8px;
+}
+
+/* The label is a flex sibling, so the glyph needs to refuse to shrink. */
+.mini-sidebar .mini-new-tab-side svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.mini-sidebar .mini-new-tab-side .mini-tab-title {
+  line-height: 28px;
+}
+
+.mini-sidebar .mini-site-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .mini-tabs-side {
@@ -307,7 +412,9 @@ body,
 
 .mini-tab-side {
   max-width: none;
-  width: 100%;
+  width: 200px;
+  flex-shrink: 0;
+  padding: 0 8px;
 }
 
 .mini-tab-side.mini-tab {
@@ -315,17 +422,17 @@ body,
 }
 
 .mini-tab-side:hover {
-  background: #f7f7f8;
+  background: #17171b;
 }
 
 .mini-tab-side.mini-tab-active {
-  background: #f3f3f5;
+  background: #232327;
 }
 
 .mini-new-tab-side {
-  width: 100%;
+  width: 200px;
+  flex-shrink: 0;
   justify-content: flex-start;
-  padding: 0 12px;
 }
 
 .mini-slot {
@@ -333,7 +440,7 @@ body,
   flex: 1;
   min-height: 0;
   min-width: 0;
-  background: #ffffff;
+  background: #0a0a0b;
 }
 
 .mini-start,
@@ -344,9 +451,38 @@ body,
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #ffffff;
+  background: #0a0a0b;
   -webkit-app-region: drag;
   app-region: drag;
+}
+
+/* Layered gradient rather than a flat fill: a cool wash from the top, a warmer
+   one from below, over a near-black base. Kept low-saturation so the page still
+   reads as black and the page content stays the brightest thing on screen. */
+.mini-start {
+  background-color: #08080a;
+  background-image:
+    radial-gradient(115% 80% at 50% -12%, #26263a 0%, transparent 60%),
+    radial-gradient(95% 72% at 50% 110%, #221a2e 0%, transparent 56%),
+    radial-gradient(70% 50% at 12% 42%, #141a26 0%, transparent 55%),
+    linear-gradient(180deg, #0d0d13 0%, #08080a 100%);
+}
+
+/* A soft pool of light behind the logo and search field. */
+.mini-start::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(820px, 92%);
+  height: 460px;
+  content: "";
+  transform: translate(-50%, -56%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.06),
+    transparent 68%
+  );
+  pointer-events: none;
 }
 
 .mini-start-inner {
@@ -358,29 +494,74 @@ body,
   app-region: no-drag;
 }
 
-.mini-start-mark {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+.mini-start-logo {
+  position: relative;
+  display: grid;
+  width: 84px;
+  height: 84px;
+  place-items: center;
 }
 
-.mini-start-ring {
+/* A solid, even ring — the mark, not a progress indicator. It drifts and
+   breathes rather than spinning, because anything travelling around a circle
+   reads as "loading" no matter how slow it goes. */
+.mini-start-logo-ring {
   box-sizing: border-box;
-  width: 15px;
-  height: 15px;
-  border: 2.5px solid #111111;
+  width: 100%;
+  height: 100%;
+  border: 14px solid #f4f4f5;
   border-radius: 50%;
+  box-shadow:
+    0 0 24px rgba(255, 255, 255, 0.16),
+    0 0 60px rgba(255, 255, 255, 0.09);
+  animation: mini-logo-float 7.5s ease-in-out infinite;
 }
 
-.mini-start-word {
-  color: #111111;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+/* The light behind it, drifting on a longer cycle than the ring so the two
+   never quite line up and the motion stays hard to predict. */
+.mini-start-logo::after {
+  position: absolute;
+  z-index: -1;
+  width: 210%;
+  height: 210%;
+  content: "";
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.13), transparent 60%);
+  animation: mini-logo-glow 11s ease-in-out infinite;
 }
+
+@keyframes mini-logo-float {
+  0%,
+  100% {
+    transform: translateY(-4px) scale(0.99);
+  }
+  50% {
+    transform: translateY(4px) scale(1.01);
+  }
+}
+
+@keyframes mini-logo-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-4px, 6px) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(4px, -6px) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-start-logo-ring,
+  .mini-start-logo::after {
+    animation: none;
+  }
+}
+
 
 .mini-start-greeting {
-  margin: 10px 0 22px;
+  margin: 20px 0 22px;
   color: #a1a1aa;
   font-size: 13px;
   letter-spacing: -0.01em;
@@ -423,6 +604,10 @@ body,
   color: #52525b;
   font-size: 14px;
   font-weight: 600;
+}
+
+.mini-start-tile-badge.mini-site-icon-img {
+  padding: 6px;
 }
 
 .mini-start-tile-title {
@@ -470,6 +655,68 @@ body,
   position: static;
 }
 
+.mini-start .mini-start-greeting {
+  color: #7c7c85;
+}
+
+.mini-start .mini-omnibox {
+  border: 1px solid #232327;
+  background: #121214;
+  color: #fafafa;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.mini-start .mini-omnibox::placeholder {
+  color: #7c7c85;
+}
+
+.mini-start .mini-omnibox:focus {
+  border-color: #34343a;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.mini-start .mini-start-tile:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.mini-start .mini-start-tile-badge {
+  border: 1px solid #232327;
+  background: #17171b;
+  color: #a1a1aa;
+}
+
+.mini-start .mini-start-tile-title {
+  color: #a1a1aa;
+}
+
+.mini-start .mini-start-empty {
+  color: #7c7c85;
+}
+
+.mini-start .mini-start-hints {
+  color: #7c7c85;
+}
+
+.mini-start .mini-start-hints kbd {
+  color: #d4d4d8;
+}
+
+.mini-start .mini-corner-ext {
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
+  box-shadow: none;
+}
+
+.mini-start .mini-corner-ext:hover {
+  background: #1b1b1f;
+  color: #fafafa;
+}
+
 .mini-omnibox-form {
   width: min(560px, 100%);
   -webkit-app-region: no-drag;
@@ -484,18 +731,19 @@ body,
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  background: #ffffff;
+  border: 1px solid #232327;
+  background: #121214;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 10px 32px rgba(0, 0, 0, 0.1);
-  color: #111111;
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 40px rgba(0, 0, 0, 0.5);
+  color: #fafafa;
   font-size: 16px;
   letter-spacing: -0.01em;
   outline: none;
 }
 
 .mini-omnibox::placeholder {
-  color: #c4c4c8;
+  color: #7c7c85;
 }
 
 .mini-omnibox:focus {
@@ -514,8 +762,8 @@ body,
   justify-content: center;
   gap: 10px;
   padding: 32px;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
   text-align: center;
 }
 
@@ -525,8 +773,8 @@ body,
   height: 36px;
   place-items: center;
   border-radius: 50%;
-  background: #fff1f1;
-  color: #b42318;
+  background: #2a1416;
+  color: #fca5a5;
   font-size: 22px;
   font-weight: 650;
 }
@@ -568,27 +816,27 @@ body,
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #e4e4e7;
+  border: 1px solid #232327;
   border-radius: 9px;
-  background: #ffffff;
-  color: #3f3f46;
+  background: #121214;
+  color: #d4d4d8;
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
 .mini-error-action:hover {
-  background: #f4f4f5;
+  background: #1b1b1f;
 }
 
 .mini-error-action-primary {
-  border-color: #18181b;
-  background: #18181b;
-  color: #ffffff;
+  border-color: #fafafa;
+  background: #fafafa;
+  color: #0a0a0b;
 }
 
 .mini-error-action-primary:hover {
-  background: #3f3f46;
+  background: #d4d4d8;
 }
 
 .mini-error-action svg {
@@ -604,7 +852,7 @@ body,
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(10, 10, 11, 0.78);
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
@@ -615,10 +863,11 @@ body,
   min-height: 180px;
   place-items: center;
   border-radius: 18px;
-  background: #ffffff;
-  color: #71717a;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
   font-size: 13px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 .mini-sheet {
@@ -628,10 +877,11 @@ body,
   flex-direction: column;
   overflow: hidden;
   border-radius: 18px;
-  background: #ffffff;
+  border: 1px solid #232327;
+  background: #121214;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 24px 64px rgba(0, 0, 0, 0.16);
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 .drag-region {
@@ -650,7 +900,7 @@ body,
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #5c5c62;
+  color: #a1a1aa;
   cursor: pointer;
 }
 
@@ -660,13 +910,13 @@ body,
 }
 
 .mini-icon-btn:hover {
-  background: #f3f3f5;
-  color: #111111;
+  background: #1b1b1f;
+  color: #fafafa;
 }
 
 .mini-icon-btn-active {
-  background: #f3f3f5;
-  color: #111111;
+  background: #232327;
+  color: #fafafa;
 }
 
 .mini-ext-tray {
@@ -690,9 +940,9 @@ body,
   justify-content: center;
   border: 0;
   border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  color: #5c5c62;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
   cursor: pointer;
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -704,5 +954,6 @@ body,
 }
 
 .mini-corner-ext:hover {
-  color: #111111;
+  background: #1b1b1f;
+  color: #fafafa;
 }

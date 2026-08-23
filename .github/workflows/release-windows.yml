@@ -1,0 +1,76 @@
+name: Build Windows release assets
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing GitHub Release tag to build (for example v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 22
+
+concurrency:
+  group: release-windows-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Windows x64 installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer and portable
+        run: npm run dist:win -- --x64 --publish never
+
+      - name: Verify release files
+        shell: bash
+        env:
+          VERSION: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#v}"
+          test -s "release/Minimal Setup ${VERSION}.exe"
+          test -s "release/Minimal.exe"
+          test -s "release/latest.yml"
+
+      - name: Upload assets to the GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          files=(
+            "release/Minimal Setup ${VERSION}.exe"
+            "release/Minimal.exe"
+            "release/latest.yml"
+          )
+          for blockmap in release/*.blockmap; do
+            [[ -f "${blockmap}" ]] && files+=("${blockmap}")
+          done
+
+          gh release upload "${TAG}" "${files[@]}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber

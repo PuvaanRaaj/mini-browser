@@ -32,7 +32,7 @@ function createWindow(): void {
     minWidth: 720,
     minHeight: 480,
     title: "Minimal",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#0a0a0b",
     show: false,
     autoHideMenuBar: process.platform !== "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
@@ -40,7 +40,9 @@ function createWindow(): void {
     titleBarOverlay:
       process.platform === "darwin"
         ? undefined
-        : { color: "#ffffff", symbolColor: "#111111", height: 44 },
+        : // Matches the start page the window opens on; the renderer flips it
+          // back to white once a page is showing.
+          { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 },
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,
@@ -94,6 +96,17 @@ app.whenReady().then(() => {
   });
   ipcMain.on("mini:layout", (_event, rect: LayoutRect) => {
     mini?.applyLayout(rect);
+  });
+  ipcMain.on("mini:chrome-theme", (_event, theme: "light" | "dark") => {
+    // Both surfaces are dark now, but keep the hook so a light theme can
+    // repaint the caption strip without new plumbing.
+    if (process.platform === "darwin") return;
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.setTitleBarOverlay(
+      theme === "light"
+        ? { color: "#ffffff", symbolColor: "#111111", height: 44 }
+        : { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 },
+    );
   });
 
   installMenu(

@@ -59,7 +59,7 @@ export function MiniApp() {
 
   const toggleBookmark = useCallback(() => {
     if (!activeTab || activeTab.isStartPage) return;
-    toggle(activeTab.url, activeTab.title);
+    toggle(activeTab.url, activeTab.title, activeTab.favicon);
   }, [activeTab, toggle]);
 
   const publishLayout = useCallback(() => {
@@ -114,6 +114,11 @@ export function MiniApp() {
     if (!sessionReady || !settings.restoreSession) return;
     saveSession(state.tabs.filter((tab) => !tab.isStartPage).map((tab) => tab.url));
   }, [sessionReady, settings.restoreSession, state.tabs]);
+
+  // Keep the native caption buttons on the same surface the renderer shows.
+  useEffect(() => {
+    window.mini?.chromeTheme("dark");
+  }, [showChrome]);
 
   useEffect(() => {
     if (showStart && showChrome) urlRef.current?.focus();
@@ -286,6 +291,10 @@ export function MiniApp() {
               onBookmark={toggleBookmark}
               onFavorites={() => setFavoritesPanelOpen((value) => !value)}
               onSettings={() => setSettingsOpen((value) => !value)}
+              onBack={() => dispatch({ type: "back" })}
+              onForward={() => dispatch({ type: "forward" })}
+              onReload={() => dispatch({ type: "reload" })}
+              onFocusMode={() => setFocusMode(true)}
             />
 
             {showFavoritesBar ? (

@@ -39,7 +39,7 @@
         "@type": "SoftwareApplication",
         "name": "Minimal",
         "applicationCategory": "BrowserApplication",
-        "operatingSystem": "macOS",
+        "operatingSystem": "macOS, Windows",
         "softwareVersion": "__VERSION__",
         "url": "__SITE_URL__/",
         "downloadUrl": "__SITE_URL__/download/latest",
@@ -869,9 +869,9 @@
         var cmdNote = document.getElementById("cmd-note");
 
         function curlCommand() {
-          var origin = location.origin;
           return (
-            'curl -fsSL ' + origin + '/download/latest -o Minimal-' + VERSION + '.dmg' +
+            'curl -fsSL ' + location.origin + '/download/latest?platform=mac -o Minimal-' +
+            VERSION + '.dmg' +
             ' <span class="c">&amp;&amp; open Minimal-' + VERSION + '.dmg</span>'
           );
         }
@@ -889,7 +889,23 @@
               note: 'Grabs the newest .dmg and mounts it — one line, no browser required.'
             };
           }
-          // windows / linux
+          // windows
+          if (platform === "windows") {
+            if (method === "homebrew") {
+              return {
+                html: '<span class="c"># Homebrew needs macOS — nothing to see here.</span>',
+                note: 'Homebrew is macOS-only. Use the download button, or the cURL tab.'
+              };
+            }
+            return {
+              html: 'curl -fsSL ' + location.origin + '/download/latest?platform=win -o Minimal.exe' +
+                    '\n<span class="c">.\\Minimal.exe</span>',
+              note: 'Portable — nothing is installed. The build is unsigned, so SmartScreen ' +
+                    'asks once: More info → Run anyway.'
+            };
+          }
+
+          // linux
           if (method === "homebrew") {
             return {
               html: '<span class="c"># Homebrew needs macOS — nothing to see here.</span>',
@@ -900,7 +916,7 @@
             html: 'git clone ' + GITHUB + '.git\n' +
                   '<span class="c">cd mini-browser</span>\n' +
                   'npm ci <span class="c">&amp;&amp;</span> npm run dev',
-            note: 'Minimal ships as a native Mac app today; a signed ' + LABEL[platform] +
+            note: 'Minimal ships as native Mac and Windows apps today; a ' + LABEL[platform] +
                   ' build is on the roadmap. Star the repo to hear about it first.'
           };
         }
@@ -927,12 +943,19 @@
           });
           // primary CTA
           if (platform === "mac") {
-            dlBtn.href = "/download/latest";
+            dlBtn.href = "/download/latest?platform=mac";
             dlBtn.dataset.platform = "mac";
             dlBtn.setAttribute("aria-label", "Download Minimal for macOS");
             dlIcon.innerHTML = '<path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/>';
             dlLabel.textContent = "Download for macOS";
             dlSub.innerHTML = "Minimal " + VERSION + " · .dmg · Apple Silicon";
+          } else if (platform === "windows") {
+            dlBtn.href = "/download/latest?platform=win";
+            dlBtn.dataset.platform = "windows";
+            dlBtn.setAttribute("aria-label", "Download Minimal for Windows");
+            dlIcon.innerHTML = '<path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/>';
+            dlLabel.textContent = "Download for Windows";
+            dlSub.innerHTML = "Minimal " + VERSION + " · .exe · x64 · unsigned";
           } else {
             dlBtn.href = GITHUB;
             dlBtn.dataset.platform = platform;

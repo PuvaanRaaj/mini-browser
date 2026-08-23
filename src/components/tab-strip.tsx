@@ -1,5 +1,6 @@
 import { PlusIcon, XIcon } from "lucide-react";
 
+import { SiteIcon } from "@/components/site-icon";
 import { modLabel } from "@/lib/mod";
 import type { TabInfo, TabPosition } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,13 @@ export function TabStrip({
               data-tab-id={tab.id}
               onClick={() => onSelect(tab.id)}
             >
+              {!tab.isStartPage || side ? (
+                <SiteIcon
+                  favicon={tab.favicon}
+                  url={tab.url}
+                  title={tab.isStartPage ? "New tab" : tab.title}
+                />
+              ) : null}
               <span className="mini-tab-title">
                 {tab.loading ? "Loading…" : tab.title || "New tab"}
               </span>
@@ -69,6 +77,7 @@ export function TabStrip({
         aria-label="New tab"
       >
         <PlusIcon />
+        {side ? <span className="mini-tab-title">New tab</span> : null}
       </button>
     </div>
   );

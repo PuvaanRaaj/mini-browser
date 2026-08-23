@@ -67,8 +67,8 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
     <aside className="mini-sheet" data-agent="authenticator-panel">
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
         <div>
-          <p className="text-sm font-medium text-neutral-900">Authenticator</p>
-          <p className="mt-0.5 text-[11px] text-neutral-500">
+          <p className="text-sm font-medium text-foreground">Authenticator</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             TOTP codes stay on this device.
           </p>
         </div>
@@ -109,7 +109,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
         </Button>
       </div>
       {importMessage ? (
-        <p className="px-4 pb-3 text-[11px] leading-4 text-neutral-500" role="status">
+        <p className="px-4 pb-3 text-[11px] leading-4 text-muted-foreground" role="status">
           {importMessage}
         </p>
       ) : null}
@@ -130,7 +130,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
                 <li key={account.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-neutral-100"
+                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-accent"
                     onClick={async () => {
                       await navigator.clipboard.writeText(code);
                       setCopiedId(account.id);
@@ -142,20 +142,20 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
                   >
                     <Countdown remaining={remaining} period={account.period} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="truncate text-xs text-neutral-500">
+                      <span className="truncate text-xs text-muted-foreground">
                         {accountTitle(account)}
                       </span>
-                      <span className="font-mono text-lg tracking-[0.18em] text-neutral-900">
+                      <span className="font-mono text-lg tracking-[0.18em] text-foreground">
                         {formatCode(code)}
                       </span>
-                      <span className="text-[10px] text-neutral-400">
+                      <span className="text-[10px] text-muted-foreground">
                         {copiedId === account.id ? "Copied" : "Click to copy"}
                       </span>
                     </span>
                     <span
                       role="button"
                       tabIndex={0}
-                      className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
+                      className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
                       onClick={(event) => {
                         event.stopPropagation();
                         persist(accounts.filter((item) => item.id !== account.id));
@@ -250,10 +250,10 @@ function EmptyState({
 }) {
   return (
     <div className="px-5 py-10 text-center">
-      <p className="text-sm font-medium text-neutral-900">
+      <p className="text-sm font-medium text-foreground">
         {hasAccounts ? "No matching accounts" : "No codes yet"}
       </p>
-      <p className="mt-1 text-xs leading-5 text-neutral-500">
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">
         Paste an otpauth:// URI or a base32 secret from GitHub, Vercel, Google,
         or anywhere else that uses TOTP.
       </p>
