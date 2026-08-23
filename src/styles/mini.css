@@ -332,16 +332,76 @@ body,
   min-width: 0;
 }
 
+/* A rail of icons that widens to show titles while the pointer is on it.
+   Nothing may paint over a native page view, so widening reflows the page
+   rather than floating above it. */
 .mini-sidebar {
   box-sizing: border-box;
   z-index: 20;
   display: flex;
-  width: 188px;
+  width: 48px;
   flex-shrink: 0;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 4px 8px 8px;
   background: #0a0a0b;
+  transition: width 140ms ease;
+}
+
+.mini-sidebar:hover {
+  width: 216px;
+}
+
+/* Collapsed: centre the icon and hide the label without unmounting it, so the
+   width transition has something to reveal. */
+.mini-sidebar .mini-tab-title {
+  opacity: 0;
+  transition: opacity 110ms ease;
+}
+
+.mini-sidebar:hover .mini-tab-title {
+  opacity: 1;
+}
+
+.mini-sidebar .mini-tab-close {
+  width: 0;
+  overflow: hidden;
+  transition: width 140ms ease;
+}
+
+.mini-sidebar:hover .mini-tab-close {
+  width: 20px;
+}
+
+.mini-sidebar .mini-tab-label {
+  gap: 10px;
+}
+
+/* .mini-icon-btn is declared later in this file and would otherwise win the
+   28px width at equal specificity, clipping the label. */
+.mini-sidebar .mini-new-tab-side {
+  width: 200px;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 28px;
+  padding: 0 8px;
+}
+
+/* The label is a flex sibling, so the glyph needs to refuse to shrink. */
+.mini-sidebar .mini-new-tab-side svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.mini-sidebar .mini-new-tab-side .mini-tab-title {
+  line-height: 28px;
+}
+
+.mini-sidebar .mini-site-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .mini-tabs-side {
@@ -352,7 +412,9 @@ body,
 
 .mini-tab-side {
   max-width: none;
-  width: 100%;
+  width: 200px;
+  flex-shrink: 0;
+  padding: 0 8px;
 }
 
 .mini-tab-side.mini-tab {
@@ -368,9 +430,9 @@ body,
 }
 
 .mini-new-tab-side {
-  width: 100%;
+  width: 200px;
+  flex-shrink: 0;
   justify-content: flex-start;
-  padding: 0 12px;
 }
 
 .mini-slot {
