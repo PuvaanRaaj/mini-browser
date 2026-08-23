@@ -100,6 +100,46 @@ export class MiniSession {
     return this.getState();
   }
 
+  async agentSnapshot(tabId?: string): Promise<unknown> {
+    const view = this.agentView(tabId);
+    return view.webContents.executeJavaScript(`(() => {
+      const text = document.body?.innerText || "";
+      const interactive = Array.from(document.querySelectorAll(
+        "a,button,input,textarea,select,[role=button],[role=link]",
+      )).slice(0, 200).map((element) => {
+        const node = element;
+        const isPassword = node instanceof HTMLInputElement && node.type === "password";
+        return {
+          tag: node.tagName.toLowerCase(),
+          role: node.getAttribute("role"),
+          label: node.getAttribute("aria-label"),
+          text: (node.innerText || node.getAttribute("title") || "").trim().slice(0, 240),
+          href: node instanceof HTMLAnchorElement ? node.href : undefined,
+          value: isPassword ? undefined : node instanceof HTMLInputElement ? node.value : undefined,
+          disabled: node instanceof HTMLButtonElement || node instanceof HTMLInputElement ? node.disabled : false,
+        };
+      });
+      return {
+        url: location.href,
+        title: document.title,
+        text: text.slice(0, 30000),
+        interactive,
+      };
+    })()`, true);
+  }
+
+  async agentEvaluate(expression: string, tabId?: string): Promise<unknown> {
+    if (!expression.trim() || expression.length > 100_000) {
+      throw new Error("The evaluation expression is empty or too large.");
+    }
+    return this.agentView(tabId).webContents.executeJavaScript(expression, true);
+  }
+
+  async agentScreenshot(tabId?: string): Promise<Buffer> {
+    const image = await this.agentView(tabId).webContents.capturePage();
+    return image.toPNG();
+  }
+
   destroy(): void {
     for (const tab of this.tabs.values()) {
       this.destroyView(tab);
@@ -295,10 +335,21 @@ export class MiniSession {
     }
   }
 
-  private activeView(): WebContentsView | null {
-    const tab = this.activeTabId ? this.tabs.get(this.activeTabId) : undefined;
+  private agentView(tabId?: string): WebContentsView {
+    const view = this.viewFor(tabId);
+    if (!view) throw new Error("The requested tab has no loaded page.");
+    return view;
+  }
+
+  private viewFor(tabId?: string): WebContentsView | null {
+    const id = tabId ?? this.activeTabId;
+    const tab = id ? this.tabs.get(id) : undefined;
     if (!tab?.view || tab.view.webContents.isDestroyed()) return null;
     return tab.view;
+  }
+
+  private activeView(): WebContentsView | null {
+    return this.viewFor();
   }
 
   private toInfo(tab: TabRecord): TabInfo {

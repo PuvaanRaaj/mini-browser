@@ -21,6 +21,7 @@ const PORT = Number(process.env.PORT ?? 3000);
 const pkg = await Bun.file(join(ROOT, "package.json")).json();
 const VERSION: string = pkg.version ?? "0.1.0";
 const GITHUB = "https://github.com/PuvaanRaaj/mini-browser";
+const SITE_URL = (process.env.SITE_URL ?? "https://mini-browser-v2.vercel.app").replace(/\/$/, "");
 const RELEASES_URL = `${GITHUB}/releases`;
 const RELEASES_DIR = join(ROOT, "release");
 
@@ -62,10 +63,10 @@ function pageFor(userAgent: string, override: string | null): Response {
     override === "mac" || override === "windows" || override === "linux"
       ? override // ?os= preview — lets anyone see another platform's state
       : detectPlatform(userAgent);
-  const html = HTML_TEMPLATE.replaceAll("__OS__", os).replaceAll(
-    "__VERSION__",
-    VERSION,
-  );
+  const html = HTML_TEMPLATE
+    .replaceAll("__OS__", os)
+    .replaceAll("__VERSION__", VERSION)
+    .replaceAll("__SITE_URL__", SITE_URL);
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" },
   });
@@ -102,7 +103,7 @@ function downloadFor(req: Request): Response {
 
 Bun.serve({
   port: PORT,
-  fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
     const { pathname } = url;
     switch (pathname) {
@@ -115,6 +116,26 @@ Bun.serve({
         return new Response(Bun.file(join(ROOT, "resources/icon.svg")), {
           headers: { "Content-Type": "image/svg+xml" },
         });
+      case "/icon.png":
+        return new Response(Bun.file(join(ROOT, "resources/icon.png")), {
+          headers: { "Content-Type": "image/png" },
+        });
+      case "/og.png":
+        return new Response(Bun.file(join(import.meta.dir, "og.png")), {
+          headers: { "Content-Type": "image/png" },
+        });
+      case "/robots.txt": {
+        const text = await Bun.file(join(import.meta.dir, "robots.txt")).text();
+        return new Response(text.replaceAll("__SITE_URL__", SITE_URL), {
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      }
+      case "/sitemap.xml": {
+        const text = await Bun.file(join(import.meta.dir, "sitemap.xml")).text();
+        return new Response(text.replaceAll("__SITE_URL__", SITE_URL), {
+          headers: { "Content-Type": "application/xml; charset=utf-8" },
+        });
+      }
       case "/api/os":
         return Response.json({
           os: detectPlatform(req.headers.get("user-agent") ?? ""),

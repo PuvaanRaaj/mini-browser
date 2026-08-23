@@ -64,7 +64,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
   }, [accounts, query]);
 
   return (
-    <aside className="mini-sheet">
+    <aside className="mini-sheet" data-agent="authenticator-panel">
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
         <div>
           <p className="text-sm font-medium text-neutral-900">Authenticator</p>
@@ -97,13 +97,14 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
           variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
+          data-agent="import-2fa-backup"
           aria-label="Import authenticator backup"
           title="Import backup"
         >
           <FileUpIcon />
           Import
         </Button>
-        <Button size="icon-sm" onClick={() => setDialogOpen(true)} aria-label="Add account">
+        <Button data-agent="add-2fa-account" size="icon-sm" onClick={() => setDialogOpen(true)} aria-label="Add account">
           <PlusIcon />
         </Button>
       </div>
@@ -199,9 +200,6 @@ function accountKey(account: {
     account.issuer.toLowerCase(),
     account.label.toLowerCase(),
     account.secret,
-    account.algorithm,
-    account.digits,
-    account.period,
   ].join("\u0000");
 }
 

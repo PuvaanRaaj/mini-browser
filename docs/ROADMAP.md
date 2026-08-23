@@ -12,7 +12,7 @@ Create a small baseline on a clean Mac and record it for every release:
 - renderer bundle size and the size of the packaged app;
 - time spent loading the guest session, ad blocker, and authenticator extension.
 
-Use Electron's `app.getAppMetrics()`, renderer `performance.mark()` calls, and the Vite build report. Set budgets in CI so a regression is visible before release.
+Use Electron's `app.getAppMetrics()`, renderer `performance.mark()` calls, and the Vite build report. The current baseline is roughly a 959 KB renderer entry, 53 KB CSS, and a 131 MB arm64 DMG. CI now fails if the initial renderer entry exceeds 1.1 MB or CSS exceeds 80 KB. Tighten those budgets after lazy-loading and profiling land.
 
 ## 2. Keep the product light
 
@@ -33,7 +33,7 @@ A system-WebView build can be evaluated later as an experimental ultra-light tar
 1. Keep first navigation independent of authenticator-extension startup. Install the built-in blocker synchronously, start the extension load in the background, and publish its ready state later.
 2. Cache EasyList/EasyPrivacy with a freshness window. Refresh stale lists in the background instead of doing network work on the first navigation.
 3. Use suffix lookup in the blocker (`Set` plus hostname labels) rather than scanning every blocked domain for every request.
-4. Lazy-load the authenticator panel and its TOTP code. The initial renderer should not pay for a feature that is not open.
+4. Lazy-load the authenticator panel and its TOTP code. The initial renderer now defers the authenticator chunk; keep measuring the improvement.
 5. Update TOTP countdowns once per second, aligned to the next boundary, rather than rendering four times per second.
 
 ### P1 — measured improvements
@@ -54,12 +54,12 @@ A system-WebView build can be evaluated later as an experimental ultra-light tar
 ### Release flow
 
 1. Every user-facing change lands on `main` through a pull request.
-2. A release PR or manual release command bumps `package.json` to a new semver version. Do not publish a new installer for an unchanged version.
-3. Merging the release PR creates tag `v<version>`.
-4. A GitHub Actions release workflow builds the macOS arm64 installer (then x64 if needed), creates a GitHub Release, and uploads the `.dmg`, `.zip`, and `latest-mac.yml`.
+2. Release Please opens a release PR and increments `package.json` and `package-lock.json` from conventional commits.
+3. Merging the release PR creates tag `v<version>` and a GitHub Release.
+4. A GitHub Actions release workflow builds the macOS arm64 installer (then x64 if needed) and uploads the `.dmg`, `.zip`, blockmaps, and `latest-mac.yml`.
 5. The landing page's download endpoint reads the newest GitHub Release asset.
 
-A release should be tag-driven, not built on every ordinary `main` push. This avoids users receiving updates for unfinished commits and gives the updater a stable version contract. The repository workflows implement this split: `ci.yml` validates every pull request and `main` push, while `release-macos.yml` builds and publishes only when a merged `main` change bumps `package.json` to a version without an existing release. It produces the arm64 `.dmg`, `.zip`, blockmaps, and `latest-mac.yml`.
+A release should be tag-driven, not built on every ordinary `main` push. This avoids users receiving updates for unfinished commits and gives the updater a stable version contract. The repository workflows implement this split: `ci.yml` validates every pull request and `main` push, `release-please.yml` manages version bumps, and `release-macos.yml` builds assets for the published tag.
 
 ### App updater
 
@@ -76,7 +76,11 @@ A release should be tag-driven, not built on every ordinary `main` push. This av
 - A tagged-release workflow that uploads both the installer and updater metadata.
 - A smoke test that installs version N, publishes N+1, checks the update metadata, downloads it, and restarts successfully.
 
-## 5. Suggested implementation order
+## 5. Agent-friendly browser
+
+The opt-in loopback API is documented in [AGENT_MODE.md](AGENT_MODE.md). It provides authenticated state, page snapshots, screenshots, browser commands, and page evaluation without exposing a network listener by default. Next, replace arbitrary evaluation with typed, approval-aware actions and accessibility IDs.
+
+## 6. Suggested implementation order
 
 1. Land the P0 speed changes and measurement marks.
 2. Add the tagged GitHub Actions release workflow with signing placeholders; validate artifacts without publishing updates.

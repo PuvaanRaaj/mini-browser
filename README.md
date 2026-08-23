@@ -86,17 +86,17 @@ Vercel hosts the landing page, not the Electron desktop app. Import the reposito
 
 ## Releases
 
-CI runs on every pull request and `main` push. To publish a new macOS installer, bump the app version and merge it to `main`:
+CI runs on every pull request and `main` push. Release Please opens a release PR and increments `package.json` and `package-lock.json` automatically. Use conventional commit prefixes so the version is predictable:
 
-```bash
-npm version patch --no-git-tag-version
-# review package.json and package-lock.json
-git add package.json package-lock.json
-git commit -m "Release v$(node -p \"require('./package.json').version\")"
-git push
-```
+- `fix:` → patch release
+- `feat:` → minor release
+- `feat!:` or `BREAKING CHANGE:` → major release
 
-The macOS release workflow then builds the arm64 `.dmg` and `.zip`, generates updater metadata, and publishes a GitHub Release. Ordinary merges with no version bump do not create duplicate releases. The first `0.1.0` release can be started from **Actions → Release macOS app → Run workflow**.
+Merge the generated release PR. It creates the version tag and GitHub Release; `release-macos.yml` then builds and uploads the arm64 `.dmg`, `.zip`, blockmaps, and updater metadata. To repair or rebuild an existing release, run **Actions → Build macOS release → Run workflow** and provide its tag.
+
+## Agent mode
+
+For local browser agents, run the opt-in loopback control API with `MINIMAL_AGENT=1`. See [docs/AGENT_MODE.md](docs/AGENT_MODE.md) for authentication, page snapshots, screenshots, and safe commands.
 
 ## Roadmap
 

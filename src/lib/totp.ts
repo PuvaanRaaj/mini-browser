@@ -48,7 +48,18 @@ export function remainingSeconds(period: number, timestamp = Date.now()): number
 }
 
 export function parseOtpAuthUri(uri: string): Omit<AuthenticatorAccount, "id" | "createdAt"> {
-  const parsed = OTPAuth.URI.parse(uri.trim());
+  const normalizedUri = uri.trim();
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(normalizedUri);
+  } catch {
+    throw new Error("Enter a valid otpauth:// URI.");
+  }
+  if (parsedUrl.protocol !== "otpauth:" || parsedUrl.hostname !== "totp") {
+    throw new Error("Only TOTP authenticator URIs are supported.");
+  }
+
+  const parsed = OTPAuth.URI.parse(normalizedUri);
   if (!(parsed instanceof OTPAuth.TOTP)) {
     throw new Error("Only TOTP authenticator URIs are supported.");
   }

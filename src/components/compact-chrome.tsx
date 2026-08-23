@@ -38,7 +38,7 @@ export function CompactChrome({
 
   return (
     <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
-      <div className="mini-tabs">
+      <div className="mini-tabs" data-agent="tabs">
         {visibleTabs.map((tab) => {
           const active = tab.id === activeTab?.id;
           return (
@@ -49,6 +49,8 @@ export function CompactChrome({
               <button
                 type="button"
                 className="mini-tab-label"
+                data-agent="tab"
+                data-tab-id={tab.id}
                 onClick={() => onSelect(tab.id)}
               >
                 <span className="mini-tab-title">
@@ -59,6 +61,7 @@ export function CompactChrome({
                 <button
                   type="button"
                   className="mini-tab-close"
+                  data-agent="close-tab"
                   onClick={(event) => {
                     event.stopPropagation();
                     onClose(tab.id);
@@ -74,6 +77,7 @@ export function CompactChrome({
         <button
           type="button"
           className="mini-icon-btn"
+          data-agent="new-tab"
           onClick={onNew}
           title={`New tab (${mod}+T)`}
           aria-label="New tab"
@@ -93,6 +97,8 @@ export function CompactChrome({
         <input
           ref={urlRef}
           className="mini-url"
+          data-agent="address-bar"
+          aria-label="Address bar"
           value={shown}
           onChange={(event) => setDraft(event.target.value)}
           onFocus={(event) => {
@@ -113,6 +119,7 @@ export function CompactChrome({
         <button
           type="button"
           className="mini-icon-btn"
+          data-agent="ad-blocker-status"
           title={adblockEnabled ? "Blocking ads and trackers" : "Ad blocker starting…"}
           aria-label="Ad blocker"
         >
@@ -121,6 +128,7 @@ export function CompactChrome({
         <button
           type="button"
           className={cn("mini-icon-btn", authenticatorOpen && "mini-icon-btn-active")}
+          data-agent="authenticator"
           onClick={onAuthenticator}
           title={`Authenticator (${mod}+Shift+A)`}
           aria-label="Authenticator"

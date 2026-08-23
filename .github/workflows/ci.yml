@@ -39,5 +39,15 @@ jobs:
       - name: Build the app
         run: npm run build
 
+      - name: Check renderer budgets
+        run: npm run check:bundle
+
       - name: Build the landing page
         run: npm run vercel-build
+
+      - name: Check landing-page metadata
+        run: |
+          test -s public/og.png
+          test -s public/robots.txt
+          test -s public/sitemap.xml
+          ! grep -q '__SITE_URL__\|__VERSION__' public/index.html

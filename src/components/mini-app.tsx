@@ -1,7 +1,11 @@
 import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
-import { AuthenticatorPanel } from "@/components/authenticator-panel";
+const AuthenticatorPanel = lazy(() =>
+  import("@/components/authenticator-panel").then(({ AuthenticatorPanel: panel }) => ({
+    default: panel,
+  })),
+);
 import { CompactChrome } from "@/components/compact-chrome";
 import { Omnibox } from "@/components/omnibox";
 import { StartPage } from "@/components/start-page";
@@ -144,7 +148,7 @@ export function MiniApp() {
 
   return (
     <TooltipProvider delay={250}>
-      <div className="mini-root">
+      <div className="mini-root" data-agent="browser-shell">
         {showChrome ? (
           <CompactChrome
             tabs={state.tabs}
@@ -196,7 +200,9 @@ export function MiniApp() {
 
           {authenticatorOpen ? (
             <div className="mini-sheet-backdrop">
-              <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+              <Suspense fallback={<div className="mini-sheet-loading">Loading authenticator…</div>}>
+                <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+              </Suspense>
             </div>
           ) : null}
         </div>

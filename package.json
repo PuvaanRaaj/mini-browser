@@ -13,13 +13,14 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
     "open:mac": "node scripts/open-mac.mjs",
     "site": "bun website/server.ts",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "electron-vite preview",
-    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts",
+    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts",
     "lint": "eslint src"
   },
   "dependencies": {

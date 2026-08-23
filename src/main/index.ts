@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { app, BrowserWindow, ipcMain } from "electron";
 
 import type { BrowserCommand, LayoutRect } from "../lib/types";
+import { AgentServer } from "./agent-server";
 import { installMenu } from "./menu";
 import { MiniSession, routeBrowserShortcut } from "./tabs";
 
@@ -12,6 +13,7 @@ if (process.platform === "linux") {
 
 let mainWindow: BrowserWindow | null = null;
 let mini: MiniSession | null = null;
+let agentServer: AgentServer | null = null;
 
 app.setName("Minimal");
 app.setAboutPanelOptions({
@@ -49,11 +51,22 @@ function createWindow(): void {
     mainWindow.webContents.send("mini:state", mini?.getState());
   });
 
+  const port = requestedAgentPort();
+  if (port !== null) {
+    agentServer = new AgentServer(mini);
+    void agentServer.start(port).catch((error) => {
+      console.error("Could not start the agent control API.", error);
+      agentServer = null;
+    });
+  }
+
   mainWindow.on("ready-to-show", () => mainWindow?.show());
   mainWindow.on("closed", () => {
     mini?.destroy();
     mini = null;
     mainWindow = null;
+    void agentServer?.close();
+    agentServer = null;
   });
 
   mainWindow.webContents.on("before-input-event", (event, input) => {
@@ -94,3 +107,19 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+
+function requestedAgentPort(): number | null {
+  const flag = process.argv.find((argument) => argument === "--agent" || argument.startsWith("--agent-port="));
+  const configured = process.env.MINIMAL_AGENT_PORT;
+  if (!flag && !process.env.MINIMAL_AGENT) return null;
+
+  const value = flag?.startsWith("--agent-port=")
+    ? flag.slice("--agent-port=".length)
+    : configured ?? "32123";
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 0 || port > 65_535) {
+    console.error("MINIMAL_AGENT_PORT must be an integer between 0 and 65535.");
+    return null;
+  }
+  return port;
+}

@@ -31,6 +31,8 @@ export function Omnibox({
       <input
         ref={inputRef}
         className="mini-omnibox"
+        data-agent="omnibox"
+        aria-label="Search or enter address"
         name="q"
         defaultValue={defaultValue}
         placeholder={placeholder}

@@ -319,6 +319,18 @@ body,
   app-region: no-drag;
 }
 
+.mini-sheet-loading {
+  display: grid;
+  width: min(380px, 100%);
+  min-height: 180px;
+  place-items: center;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #71717a;
+  font-size: 13px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16);
+}
+
 .mini-sheet {
   display: flex;
   width: min(380px, 100%);

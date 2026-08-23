@@ -168,9 +168,6 @@ function dedupe(accounts: AuthenticatorAccount[]): AuthenticatorAccount[] {
       account.issuer.toLowerCase(),
       account.label.toLowerCase(),
       account.secret,
-      account.algorithm,
-      account.digits,
-      account.period,
     ].join("\u0000");
     if (seen.has(key)) return false;
     seen.add(key);
