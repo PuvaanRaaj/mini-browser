@@ -1,0 +1,121 @@
+name: Release macOS app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 22
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Check release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Decide whether this is a release
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+          should_release=true
+          reason="version ${version} has not been released yet"
+
+          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+            previous_version="$(git show "${GITHUB_SHA}^:package.json" 2>/dev/null | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                try { process.stdout.write(String(JSON.parse(input).version ?? "")); }
+                catch { process.stdout.write(""); }
+              });
+            ')"
+            if [[ "${previous_version}" == "${version}" ]]; then
+              should_release=false
+              reason="package.json version did not change on this main push"
+            fi
+          fi
+
+          if [[ "${should_release}" == true ]] && gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            should_release=false
+            reason="${tag} already has a GitHub Release"
+          fi
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "should_release=${should_release}" >> "${GITHUB_OUTPUT}"
+          echo "Release decision: ${should_release} (${reason})"
+
+  build:
+    name: Build macOS arm64 installer
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG and ZIP
+        run: npm run dist:mac -- --arm64 --publish never
+
+      - name: Verify release files
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -s "release/Minimal-${VERSION}-mac-arm64.dmg"
+          test -s "release/Minimal-${VERSION}-mac-arm64.zip"
+          test -s "release/latest-mac.yml"
+
+      - name: Upload GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          files=(
+            "release/Minimal-${VERSION}-mac-arm64.dmg"
+            "release/Minimal-${VERSION}-mac-arm64.zip"
+            "release/latest-mac.yml"
+          )
+          for blockmap in release/*.blockmap; do
+            [[ -f "${blockmap}" ]] && files+=("${blockmap}")
+          done
+
+          gh release create "${TAG}" "${files[@]}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Minimal ${VERSION}" \
+            --generate-notes

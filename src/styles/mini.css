@@ -214,18 +214,96 @@ body,
     0 12px 36px rgba(0, 0, 0, 0.12);
 }
 
-.mini-error {
+.mini-error-page {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
-  left: 16px;
+  inset: 0;
   z-index: 10;
-  padding: 10px 14px;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  background: #ffffff;
+  color: #111111;
+  text-align: center;
+}
+
+.mini-error-mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
   background: #fff1f1;
   color: #b42318;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.mini-error-page h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.mini-error-page p {
+  max-width: 420px;
+  margin: 0;
+  color: #71717a;
   font-size: 13px;
-  text-align: center;
+  line-height: 1.5;
+}
+
+.mini-error-page code {
+  max-width: min(560px, 100%);
+  overflow: hidden;
+  color: #a1a1aa;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-error-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.mini-error-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e4e4e7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #3f3f46;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mini-error-action:hover {
+  background: #f4f4f5;
+}
+
+.mini-error-action-primary {
+  border-color: #18181b;
+  background: #18181b;
+  color: #ffffff;
+}
+
+.mini-error-action-primary:hover {
+  background: #3f3f46;
+}
+
+.mini-error-action svg {
+  width: 14px;
+  height: 14px;
 }
 
 .mini-sheet-backdrop {

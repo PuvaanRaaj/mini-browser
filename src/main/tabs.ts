@@ -11,6 +11,7 @@ import {
 } from "electron";
 
 import { enableAdblock } from "./adblock";
+import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-error";
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
 import { resolveNavigation } from "../lib/url";
 
@@ -112,9 +113,15 @@ export class MiniSession {
     this.guest = electronSession.fromPartition(`mini-${this.sessionId}`);
     this.guest.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     this.guest.setUserAgent(this.guest.getUserAgent().replace(/Electron\/\S+\s/g, ""));
-    this.adblockEnabled = await enableAdblock(this.guest);
-    this.extensionLoaded = await loadAuthenticatorExtension(this.guest);
-    return this.guest;
+    const session = this.guest;
+    this.adblockEnabled = await enableAdblock(session);
+    const sessionId = this.sessionId;
+    void loadAuthenticatorExtension(session).then((loaded) => {
+      if (this.sessionId !== sessionId || this.guest !== session) return;
+      this.extensionLoaded = loaded;
+      this.onState();
+    });
+    return session;
   }
 
   private createStartTab(activate: boolean): TabRecord {
@@ -144,12 +151,15 @@ export class MiniSession {
     tab.error = null;
     tab.url = url;
     tab.title = hostname(url) || "Loading";
+    this.layoutViews();
     this.onState();
-    const view = await this.ensureView(tab);
     try {
+      const view = await this.ensureView(tab);
       await view.webContents.loadURL(url);
     } catch (error) {
-      tab.error = error instanceof Error ? error.message : "Navigation failed.";
+      if (this.tabs.get(id) !== tab || tab.url !== url) return;
+      const code = navigationErrorCode(error);
+      tab.error = navigationErrorMessage(code, url);
       tab.loading = false;
     }
     this.layoutViews();
@@ -207,10 +217,11 @@ export class MiniSession {
       tab.url = url;
       this.onState();
     });
-    wc.on("did-fail-load", (_event, code, desc, url, isMainFrame) => {
-      if (!isMainFrame || code === -3) return;
-      tab.error = desc || `Failed to load ${url}`;
+    wc.on("did-fail-load", (_event, code, _desc, url, isMainFrame) => {
+      if (!isMainFrame) return;
+      tab.error = navigationErrorMessage(code, url);
       tab.loading = false;
+      this.layoutViews();
       this.onState();
     });
     wc.on("before-input-event", (event, input) => {
@@ -269,6 +280,7 @@ export class MiniSession {
         this.layout.visible &&
         id === this.activeTabId &&
         !tab.isStartPage &&
+        !tab.error &&
         this.layout.width > 0 &&
         this.layout.height > 0;
       tab.view.setVisible(show);

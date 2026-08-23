@@ -14,7 +14,19 @@ Create a small baseline on a clean Mac and record it for every release:
 
 Use Electron's `app.getAppMetrics()`, renderer `performance.mark()` calls, and the Vite build report. Set budgets in CI so a regression is visible before release.
 
-## 2. Speed work
+## 2. Keep the product light
+
+Electron's Chromium runtime is the largest part of the installer; removing a few React components will not turn a desktop browser into a tiny web app. Keep the security and rendering engine intact, and optimize the parts we control:
+
+- keep the initial renderer chunk small and lazy-load optional features;
+- ship only the extension resources that the app actually loads;
+- avoid bundling build tools, source maps, and development files into the packaged app;
+- measure compressed initial JavaScript, cold start, and installer size separately;
+- prefer one shared browser session and bounded caches over duplicate processes.
+
+A system-WebView build can be evaluated later as an experimental ultra-light target, but it would change Chromium compatibility and should not replace the main build without benchmarks.
+
+## 3. Speed work
 
 ### P0 — low-risk wins
 
@@ -37,7 +49,7 @@ Use Electron's `app.getAppMetrics()`, renderer `performance.mark()` calls, and t
 2. Add tab suspension for background tabs only after measuring memory pressure.
 3. Move expensive parsing and future filter transforms off the UI path.
 
-## 3. Release and automatic updates
+## 4. Release and automatic updates
 
 ### Release flow
 
@@ -47,7 +59,7 @@ Use Electron's `app.getAppMetrics()`, renderer `performance.mark()` calls, and t
 4. A GitHub Actions release workflow builds the macOS arm64 installer (then x64 if needed), creates a GitHub Release, and uploads the `.dmg`, `.zip`, and `latest-mac.yml`.
 5. The landing page's download endpoint reads the newest GitHub Release asset.
 
-A release should be tag-driven, not built on every ordinary `main` push. This avoids users receiving updates for unfinished commits and gives the updater a stable version contract.
+A release should be tag-driven, not built on every ordinary `main` push. This avoids users receiving updates for unfinished commits and gives the updater a stable version contract. The repository workflows implement this split: `ci.yml` validates every pull request and `main` push, while `release-macos.yml` builds and publishes only when a merged `main` change bumps `package.json` to a version without an existing release. It produces the arm64 `.dmg`, `.zip`, blockmaps, and `latest-mac.yml`.
 
 ### App updater
 
@@ -64,7 +76,7 @@ A release should be tag-driven, not built on every ordinary `main` push. This av
 - A tagged-release workflow that uploads both the installer and updater metadata.
 - A smoke test that installs version N, publishes N+1, checks the update metadata, downloads it, and restarts successfully.
 
-## 4. Suggested implementation order
+## 5. Suggested implementation order
 
 1. Land the P0 speed changes and measurement marks.
 2. Add the tagged GitHub Actions release workflow with signing placeholders; validate artifacts without publishing updates.

@@ -45,7 +45,8 @@ function createWindow(): void {
   });
 
   mini = new MiniSession(mainWindow, () => {
-    mainWindow?.webContents.send("mini:state", mini?.getState());
+    if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) return;
+    mainWindow.webContents.send("mini:state", mini?.getState());
   });
 
   mainWindow.on("ready-to-show", () => mainWindow?.show());

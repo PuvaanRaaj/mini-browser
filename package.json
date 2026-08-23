@@ -19,7 +19,7 @@
     "site": "bun website/server.ts",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "electron-vite preview",
-    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts",
+    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts",
     "lint": "eslint src"
   },
   "dependencies": {
@@ -79,6 +79,12 @@
     },
     "dmg": {
       "title": "Minimal"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "PuvaanRaaj",
+      "repo": "mini-browser",
+      "releaseType": "release"
     }
   }
 }

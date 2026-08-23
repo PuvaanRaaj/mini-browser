@@ -1,11 +1,12 @@
-import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { FileUpIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AddAccountDialog } from "@/components/add-account-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createDemoAccount, useAccounts } from "@/lib/accounts";
+import { parseAuthenticatorBackup } from "@/lib/import-backup";
 import { accountTitle, generateCode, remainingSeconds } from "@/lib/totp";
 
 export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
@@ -14,11 +15,45 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  const importBackup = async (file: File) => {
+    setImportMessage(null);
+    try {
+      const result = parseAuthenticatorBackup(await file.text());
+      if (result.accounts.length === 0) {
+        throw new Error(
+          "No supported TOTP accounts found. Export an unencrypted JSON or otpauth backup.",
+        );
+      }
+
+      const existing = new Set(accounts.map(accountKey));
+      const newAccounts = result.accounts.filter((account) => {
+        const key = accountKey(account);
+        if (existing.has(key)) return false;
+        existing.add(key);
+        return true;
+      });
+
+      if (newAccounts.length > 0) persist([...accounts, ...newAccounts]);
+      const skipped = result.skipped > 0 ? ` ${result.skipped} skipped.` : "";
+      setImportMessage(
+        newAccounts.length > 0
+          ? `Imported ${newAccounts.length} account${newAccounts.length === 1 ? "" : "s"}.${skipped} Delete the backup file when finished.`
+          : `All accounts were already present.${skipped}`,
+      );
+    } catch (caught) {
+      setImportMessage(caught instanceof Error ? caught.message : "Could not import backup.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -48,10 +83,35 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search accounts"
         />
+        <input
+          ref={fileInputRef}
+          className="hidden"
+          type="file"
+          accept=".json,.txt,application/json,text/plain"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void importBackup(file);
+          }}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Import authenticator backup"
+          title="Import backup"
+        >
+          <FileUpIcon />
+          Import
+        </Button>
         <Button size="icon-sm" onClick={() => setDialogOpen(true)} aria-label="Add account">
           <PlusIcon />
         </Button>
       </div>
+      {importMessage ? (
+        <p className="px-4 pb-3 text-[11px] leading-4 text-neutral-500" role="status">
+          {importMessage}
+        </p>
+      ) : null}
 
       <ScrollArea className="min-h-0 flex-1">
         {filtered.length === 0 ? (
@@ -125,6 +185,24 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
       />
     </aside>
   );
+}
+
+function accountKey(account: {
+  issuer: string;
+  label: string;
+  secret: string;
+  algorithm: string;
+  digits: number;
+  period: number;
+}): string {
+  return [
+    account.issuer.toLowerCase(),
+    account.label.toLowerCase(),
+    account.secret,
+    account.algorithm,
+    account.digits,
+    account.period,
+  ].join("\u0000");
 }
 
 function formatCode(code: string): string {

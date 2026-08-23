@@ -84,6 +84,20 @@ The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build 
 
 Vercel hosts the landing page, not the Electron desktop app. Import the repository with the root directory set to `./`, choose **Other**, and click **Deploy**. `vercel.json` runs the lightweight static build in `scripts/vercel-build.mjs` and skips development dependencies. The download button redirects to the newest `.dmg` attached to a GitHub Release; publish a release before offering downloads.
 
+## Releases
+
+CI runs on every pull request and `main` push. To publish a new macOS installer, bump the app version and merge it to `main`:
+
+```bash
+npm version patch --no-git-tag-version
+# review package.json and package-lock.json
+git add package.json package-lock.json
+git commit -m "Release v$(node -p \"require('./package.json').version\")"
+git push
+```
+
+The macOS release workflow then builds the arm64 `.dmg` and `.zip`, generates updater metadata, and publishes a GitHub Release. Ordinary merges with no version bump do not create duplicate releases. The first `0.1.0` release can be started from **Actions → Release macOS app → Run workflow**.
+
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the performance, release, and automatic-update plan.
@@ -123,6 +137,13 @@ There is no Chrome Web Store here. 2FA is built in:
 - **⌘⇧A**, or **View → Authenticator**
 
 Paste an `otpauth://` URI or a base32 secret, click a code to copy it. Secrets live in Minimal's renderer storage and survive **Reset Session**.
+
+### Migrate from the Authenticator extension
+
+1. In the old extension, open its backup screen and choose **Download Backup File**. Export the unencrypted JSON backup (or its one-line `otpauth://` backup); encrypted backups cannot be read without the old extension's password format.
+2. In Minimal, open **Authenticator** and choose **Import** next to the account search field.
+3. Select the downloaded `.json` or `.txt` file. Accounts are parsed locally, duplicates are ignored, and unsupported HOTP/Steam entries are reported as skipped.
+4. Delete the unencrypted backup file after confirming the codes work.
 
 The same authenticator also ships as a Manifest V3 extension in `extension/`, loaded into the guest Chromium session. Electron does not draw Chrome's puzzle-piece toolbar, so the key icon is the control.
 

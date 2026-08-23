@@ -1,3 +1,4 @@
+import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AuthenticatorPanel } from "@/components/authenticator-panel";
@@ -184,7 +185,13 @@ export function MiniApp() {
           ) : null}
 
           {!showStart && !showOmnibox && activeTab?.error ? (
-            <div className="mini-error">{activeTab.error}</div>
+            <NavigationError
+              message={activeTab.error}
+              url={activeTab.url}
+              canGoBack={activeTab.canGoBack}
+              onRetry={() => activeTab.url && navigate(activeTab.url)}
+              onBack={() => dispatch({ type: "back" })}
+            />
           ) : null}
 
           {authenticatorOpen ? (
@@ -195,5 +202,40 @@ export function MiniApp() {
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+function NavigationError({
+  message,
+  url,
+  canGoBack,
+  onRetry,
+  onBack,
+}: {
+  message: string;
+  url: string;
+  canGoBack: boolean;
+  onRetry: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="mini-error-page" role="alert">
+      <div className="mini-error-mark">!</div>
+      <h1>Couldn’t load this page</h1>
+      <p>{message}</p>
+      {url ? <code>{url}</code> : null}
+      <div className="mini-error-actions">
+        <button type="button" className="mini-error-action mini-error-action-primary" onClick={onRetry}>
+          <RefreshCwIcon />
+          Try again
+        </button>
+        {canGoBack ? (
+          <button type="button" className="mini-error-action" onClick={onBack}>
+            <ArrowLeftIcon />
+            Go back
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }
