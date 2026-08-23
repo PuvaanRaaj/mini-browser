@@ -1,7 +1,9 @@
 [workspace]
 members = [
     "apps/windows",
+    "crates/minimal-agent",
     "crates/minimal-auth",
+    "crates/minimal-bench",
     "crates/minimal-blocker",
     "crates/minimal-core",
     "crates/minimal-storage",
