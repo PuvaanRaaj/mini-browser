@@ -30,7 +30,7 @@ export class MiniSession {
   private sessionId = randomUUID();
   private guest: Session | null = null;
   private extensionLoaded = false;
-  private layout: LayoutRect = { x: 0, y: 80, width: 1280, height: 720, visible: false };
+  private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
     private readonly window: BrowserWindow,
@@ -163,6 +163,7 @@ export class MiniSession {
       },
     });
     tab.view = view;
+    view.setBackgroundColor("#ffffff");
     this.window.contentView.addChildView(view);
     this.bind(tab, view);
     return view;

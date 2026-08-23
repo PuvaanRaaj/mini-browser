@@ -1,21 +1,21 @@
-import { EraserIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AuthenticatorPanel } from "@/components/authenticator-panel";
+import { Omnibox } from "@/components/omnibox";
 import { StartPage } from "@/components/start-page";
 import { TabStrip } from "@/components/tab-strip";
 import { Toolbar } from "@/components/toolbar";
-import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useMiniBrowser } from "@/hooks/use-mini-browser";
 import type { BrowserCommand, LayoutRect } from "@/lib/types";
+import { displayUrl } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
 export function MiniApp() {
-  const { state, activeTab, send, isNative } = useMiniBrowser();
-  const [focusMode, setFocusMode] = useState(false);
+  const { state, activeTab, send } = useMiniBrowser();
+  const [chromeVisible, setChromeVisible] = useState(false);
+  const [omniboxOpen, setOmniboxOpen] = useState(false);
   const [authenticatorOpen, setAuthenticatorOpen] = useState(false);
-  const [chromeRevealed, setChromeRevealed] = useState(false);
   const urlRef = useRef<HTMLInputElement | null>(null);
   const slotRef = useRef<HTMLDivElement | null>(null);
   const isMac = window.mini?.platform === "darwin";
@@ -28,7 +28,9 @@ export function MiniApp() {
   );
 
   const showStart = !activeTab || activeTab.isStartPage;
-  const hideChrome = focusMode && !chromeRevealed && !showStart;
+  const showOmnibox = omniboxOpen && !showStart;
+  const pageVisible = !showStart && !showOmnibox && !authenticatorOpen;
+  const showChrome = chromeVisible && !showStart && !showOmnibox && !authenticatorOpen;
 
   const publishLayout = useCallback(() => {
     const node = slotRef.current;
@@ -39,10 +41,10 @@ export function MiniApp() {
       y: rect.top,
       width: rect.width,
       height: rect.height,
-      visible: !showStart,
+      visible: pageVisible,
     };
     window.mini.layout(payload);
-  }, [showStart]);
+  }, [pageVisible]);
 
   useEffect(() => {
     publishLayout();
@@ -55,126 +57,129 @@ export function MiniApp() {
       observer.disconnect();
       window.removeEventListener("resize", publishLayout);
     };
-  }, [publishLayout, authenticatorOpen, hideChrome, focusMode]);
+  }, [publishLayout, showChrome]);
 
   useEffect(() => {
     const api = window.mini;
     if (!api) return;
     const stopFocus = api.onFocusUrl(() => {
-      setFocusMode(false);
-      urlRef.current?.focus();
-      urlRef.current?.select();
+      if (showStart) return;
+      setAuthenticatorOpen(false);
+      setOmniboxOpen(true);
     });
     const stopToggle = api.onToggle((what) => {
-      if (what === "focus") setFocusMode((value) => !value);
+      if (what === "focus") {
+        setOmniboxOpen(false);
+        setAuthenticatorOpen(false);
+        setChromeVisible((value) => !value);
+      }
       if (what === "authenticator") {
+        setOmniboxOpen(false);
         setAuthenticatorOpen((value) => !value);
-        setFocusMode(false);
       }
     });
     return () => {
       stopFocus();
       stopToggle();
     };
-  }, []);
+  }, [showStart]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (authenticatorOpen) {
+          event.preventDefault();
+          setAuthenticatorOpen(false);
+          return;
+        }
+        if (omniboxOpen && !showStart) {
+          event.preventDefault();
+          setOmniboxOpen(false);
+          return;
+        }
+      }
+
       if (window.mini) return;
       const mod = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
       if (mod && event.shiftKey && key === "a") {
         event.preventDefault();
+        setOmniboxOpen(false);
         setAuthenticatorOpen((value) => !value);
       }
       if (mod && event.shiftKey && key === "f") {
         event.preventDefault();
-        setFocusMode((value) => !value);
+        setOmniboxOpen(false);
+        setAuthenticatorOpen(false);
+        setChromeVisible((value) => !value);
+      }
+      if (mod && key === "l" && !showStart) {
+        event.preventDefault();
+        setAuthenticatorOpen(false);
+        setOmniboxOpen(true);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [authenticatorOpen, omniboxOpen, showStart]);
+
+  const navigate = (url: string) => {
+    setOmniboxOpen(false);
+    dispatch({ type: "navigate", url });
+  };
 
   return (
     <TooltipProvider delay={250}>
-      <div className="flex h-full flex-col bg-[#111113] text-foreground">
-        <header
-          className={cn(
-            "drag-region z-20 border-b border-white/5 bg-[#161618]",
-            isMac && "pl-[68px]",
-            hideChrome && "absolute inset-x-0 top-0 border-b-transparent bg-transparent opacity-0 hover:opacity-100",
-          )}
-          onMouseEnter={() => focusMode && setChromeRevealed(true)}
-          onMouseLeave={() => setChromeRevealed(false)}
-        >
-          {!hideChrome || chromeRevealed ? (
-            <>
-              <div className="flex items-center gap-2 px-2 pt-1.5">
-                <TabStrip
-                  tabs={state.tabs}
-                  activeTabId={state.activeTabId}
-                  onSelect={(id) => dispatch({ type: "switchTab", id })}
-                  onClose={(id) => dispatch({ type: "closeTab", id })}
-                  onNew={() => dispatch({ type: "newTab" })}
-                />
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  className="no-drag ml-auto hidden shrink-0 text-[11px] text-muted-foreground sm:inline-flex"
-                  onClick={() => dispatch({ type: "resetSession" })}
-                >
-                  <EraserIcon />
-                  Reset session
-                </Button>
-              </div>
-              <div className="no-drag">
-                <Toolbar
-                  tab={activeTab}
-                  focusMode={focusMode}
-                  authenticatorOpen={authenticatorOpen}
-                  onBack={() => dispatch({ type: "back" })}
-                  onForward={() => dispatch({ type: "forward" })}
-                  onReload={() => dispatch({ type: "reload" })}
-                  onNavigate={(url) => dispatch({ type: "navigate", url })}
-                  onToggleFocus={() => setFocusMode((value) => !value)}
-                  onToggleAuthenticator={() => setAuthenticatorOpen((value) => !value)}
-                  urlRef={urlRef}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="h-3" />
-          )}
-        </header>
-
-        <div className="flex min-h-0 flex-1">
-          <main className="relative min-w-0 flex-1">
-            <div ref={slotRef} className="h-full min-h-0">
-              {showStart ? (
-                <StartPage
-                  onNavigate={(url) => dispatch({ type: "navigate", url })}
-                  onOpenAuthenticator={() => setAuthenticatorOpen(true)}
-                  extensionLoaded={state.extensionLoaded}
-                  isNative={isNative}
-                />
-              ) : (
-                <div className="h-full bg-[#0b0b0c]">
-                  {activeTab?.error ? (
-                    <div className="absolute inset-x-0 bottom-0 z-10 bg-destructive/15 px-4 py-2 text-center text-xs text-destructive">
-                      {activeTab.error}
-                    </div>
-                  ) : null}
-                </div>
-              )}
+      <div className="mini-root">
+        {showChrome ? (
+          <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
+            <div className="no-drag flex items-center gap-2 px-2 pt-1.5">
+              <TabStrip
+                tabs={state.tabs}
+                activeTabId={state.activeTabId}
+                onSelect={(id) => dispatch({ type: "switchTab", id })}
+                onClose={(id) => dispatch({ type: "closeTab", id })}
+                onNew={() => dispatch({ type: "newTab" })}
+              />
             </div>
-          </main>
-          <div className="no-drag">
-            <AuthenticatorPanel
-              open={authenticatorOpen}
-              onClose={() => setAuthenticatorOpen(false)}
-            />
-          </div>
+            <div className="no-drag">
+              <Toolbar
+                tab={activeTab}
+                focusMode={!chromeVisible}
+                authenticatorOpen={authenticatorOpen}
+                onBack={() => dispatch({ type: "back" })}
+                onForward={() => dispatch({ type: "forward" })}
+                onReload={() => dispatch({ type: "reload" })}
+                onNavigate={navigate}
+                onToggleFocus={() => setChromeVisible((value) => !value)}
+                onToggleAuthenticator={() => setAuthenticatorOpen((value) => !value)}
+                urlRef={urlRef}
+              />
+            </div>
+          </header>
+        ) : null}
+
+        <div ref={slotRef} className="mini-slot">
+          {showStart ? <StartPage onNavigate={navigate} /> : null}
+
+          {showOmnibox ? (
+            <div className="mini-overlay">
+              <Omnibox
+                defaultValue={displayUrl(activeTab?.url ?? "")}
+                onSubmit={navigate}
+              />
+            </div>
+          ) : null}
+
+          {!showStart && !showOmnibox && activeTab?.error ? (
+            <div className="mini-error">{activeTab.error}</div>
+          ) : null}
+
+          {authenticatorOpen ? (
+            <div className="mini-sheet-backdrop">
+              <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+            </div>
+          ) : null}
         </div>
       </div>
     </TooltipProvider>

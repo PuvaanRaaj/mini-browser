@@ -1,4 +1,4 @@
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AddAccountDialog } from "@/components/add-account-dialog";
@@ -6,20 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createDemoAccount, useAccounts } from "@/lib/accounts";
-import {
-  accountTitle,
-  generateCode,
-  remainingSeconds,
-} from "@/lib/totp";
-import { cn } from "@/lib/utils";
+import { accountTitle, generateCode, remainingSeconds } from "@/lib/totp";
 
-export function AuthenticatorPanel({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
   const [accounts, persist] = useAccounts();
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -40,25 +29,20 @@ export function AuthenticatorPanel({
   }, [accounts, query]);
 
   return (
-    <aside
-      className={cn(
-        "flex h-full w-full flex-col border-l border-border bg-card sm:w-80",
-        !open && "hidden",
-      )}
-    >
-      <div className="flex items-center justify-between px-3 py-2.5">
+    <aside className="mini-sheet">
+      <div className="flex items-start justify-between px-4 pt-4 pb-2">
         <div>
-          <p className="text-sm font-medium">Authenticator</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-sm font-medium text-neutral-900">Authenticator</p>
+          <p className="mt-0.5 text-[11px] text-neutral-500">
             TOTP codes stay on this device.
           </p>
         </div>
-        <Button variant="ghost" size="xs" onClick={onClose} className="sm:hidden">
-          Close
+        <Button variant="ghost" size="icon-xs" onClick={onClose} aria-label="Close">
+          <XIcon />
         </Button>
       </div>
 
-      <div className="flex gap-2 px-3 pb-3">
+      <div className="flex gap-2 px-4 pb-3">
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -85,7 +69,7 @@ export function AuthenticatorPanel({
                 <li key={account.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted/70"
+                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-neutral-100"
                     onClick={async () => {
                       await navigator.clipboard.writeText(code);
                       setCopiedId(account.id);
@@ -97,20 +81,20 @@ export function AuthenticatorPanel({
                   >
                     <Countdown remaining={remaining} period={account.period} />
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="truncate text-xs text-neutral-500">
                         {accountTitle(account)}
                       </span>
-                      <span className="font-mono text-lg tracking-[0.18em] text-foreground">
+                      <span className="font-mono text-lg tracking-[0.18em] text-neutral-900">
                         {formatCode(code)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-neutral-400">
                         {copiedId === account.id ? "Copied" : "Click to copy"}
                       </span>
                     </span>
                     <span
                       role="button"
                       tabIndex={0}
-                      className="rounded-md p-1 text-muted-foreground hover:bg-background hover:text-destructive"
+                      className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
                       onClick={(event) => {
                         event.stopPropagation();
                         persist(accounts.filter((item) => item.id !== account.id));
@@ -161,14 +145,14 @@ function Countdown({ remaining, period }: { remaining: number; period: number })
         cx="12"
         cy="12"
         r={radius}
-        className="fill-none stroke-white/10"
+        className="fill-none stroke-neutral-200"
         strokeWidth="2.5"
       />
       <circle
         cx="12"
         cy="12"
         r={radius}
-        className={urgent ? "fill-none stroke-red-400" : "fill-none stroke-emerald-400"}
+        className={urgent ? "fill-none stroke-red-500" : "fill-none stroke-emerald-500"}
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeDasharray={circumference}
@@ -190,10 +174,10 @@ function EmptyState({
 }) {
   return (
     <div className="px-5 py-10 text-center">
-      <p className="text-sm font-medium">
+      <p className="text-sm font-medium text-neutral-900">
         {hasAccounts ? "No matching accounts" : "No codes yet"}
       </p>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+      <p className="mt-1 text-xs leading-5 text-neutral-500">
         Paste an otpauth:// URI or a base32 secret from GitHub, Vercel, Google,
         or anywhere else that uses TOTP.
       </p>

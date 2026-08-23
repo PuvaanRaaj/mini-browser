@@ -1,8 +1,8 @@
 # Mini
 
-A personal Chromium browser for macOS: fresh session, thin chrome, Orion-style focus mode, and a built-in TOTP authenticator.
+A personal Chromium browser for macOS. White window, almost no chrome: one search field, then the page fills the frame. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
 
-Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
+Inspired by [Guillermo Rauch’s Mini](https://x.com/rauchg/status/2091229263701905662) (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
 
 **Public (anyone):** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)  
 **Cursor / Origin:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser)
@@ -68,22 +68,25 @@ The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build 
 
 A full browser is cookies, extensions, and logged-in tabs. Mini is the opposite:
 
-- **Native macOS window** with traffic lights and a hidden title bar
+- **Chromeless by default** — a white window with one search field. After you go somewhere, the page is the whole window, like a native document.
 - **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
-- **Focus mode** (`⌘⇧F`) hides tabs and the toolbar for screen shares
+- **Focus mode** (`⌘⇧F`) is on from launch. Toggle it to show tabs and the toolbar when you need them.
 - **Authenticator** (`⌘⇧A`) so you can still 2FA without your daily browser
+
+`⌘L` brings back the same centered search field over the current page. Escape dismisses it.
 
 ## Keyboard
 
 | Shortcut | Action |
 | --- | --- |
-| `⌘L` | Focus the address bar |
+| `⌘L` | Open the search field |
 | `⌘T` | New tab |
 | `⌘W` | Close tab |
 | `⌘R` | Reload |
-| `⌘⇧F` | Focus mode |
+| `⌘⇧F` | Toggle tabs and toolbar |
 | `⌘⇧A` | Authenticator |
 | `⌘[ / ⌘]` | Back / forward |
+| `Esc` | Close search or authenticator |
 
 Search queries go to DuckDuckGo. Hostnames open as `https://`.
 

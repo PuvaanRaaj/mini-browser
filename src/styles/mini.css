@@ -1,0 +1,146 @@
+/* Layout that must work even if Tailwind fails to emit utilities in the
+   packaged app. Guillermo's Mini is a white canvas + one search field. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #ffffff;
+  color: #111111;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mini-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  color: #111111;
+}
+
+.mini-chrome {
+  z-index: 20;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.mini-chrome-mac {
+  padding-left: 72px;
+}
+
+.mini-slot {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  background: #ffffff;
+}
+
+.mini-start,
+.mini-overlay {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #ffffff;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.mini-omnibox-form {
+  width: min(560px, 100%);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-omnibox {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 10px 32px rgba(0, 0, 0, 0.1);
+  color: #111111;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  outline: none;
+}
+
+.mini-omnibox::placeholder {
+  color: #c4c4c8;
+}
+
+.mini-omnibox:focus {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 12px 36px rgba(0, 0, 0, 0.12);
+}
+
+.mini-error {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff1f1;
+  color: #b42318;
+  font-size: 13px;
+  text-align: center;
+}
+
+.mini-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-sheet {
+  display: flex;
+  width: min(380px, 100%);
+  max-height: min(560px, calc(100% - 16px));
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 24px 64px rgba(0, 0, 0, 0.16);
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}

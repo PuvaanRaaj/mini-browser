@@ -1,4 +1,3 @@
-
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -98,17 +97,13 @@ export function Toolbar({
             event.target.select();
           }}
           onBlur={() => setFocused(false)}
-          placeholder="Search or enter address"
+          placeholder="Enter URL or search..."
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
-          className="h-8 w-full rounded-full border border-input bg-input/40 px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:bg-background focus:ring-3 focus:ring-ring/40"
+          className="h-8 w-full rounded-full border border-neutral-200 bg-neutral-50 px-3.5 text-[13px] text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-300 focus:bg-white focus:ring-3 focus:ring-neutral-200"
         />
       </form>
-
-      <span className="hidden items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium tracking-wide text-emerald-300 uppercase sm:inline-flex">
-        Fresh
-      </span>
 
       <IconTip label="Focus mode" shortcut={`${mod}+Shift+F`}>
         <Button
@@ -148,7 +143,7 @@ function IconTip({
       <TooltipTrigger render={children} />
       <TooltipContent>
         {label}
-        <kbd className="ml-1 rounded bg-background/20 px-1 font-mono text-[10px]">
+        <kbd className="ml-1 rounded bg-black/5 px-1 font-mono text-[10px]">
           {shortcut}
         </kbd>
       </TooltipContent>

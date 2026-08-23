@@ -28,10 +28,10 @@ export function TabStrip({
             <div
               key={tab.id}
               className={cn(
-                "group flex h-8 max-w-48 min-w-32 shrink-0 items-center gap-1.5 rounded-t-lg px-2 text-left text-xs transition-colors",
+                "group flex h-8 max-w-48 min-w-32 shrink-0 items-center gap-1.5 rounded-lg px-2 text-left text-xs transition-colors",
                 active
-                  ? "bg-background text-foreground"
-                  : "text-muted-foreground hover:bg-background/50 hover:text-foreground",
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900",
               )}
             >
               <button

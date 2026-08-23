@@ -27,15 +27,15 @@ function createWindow(): void {
     minWidth: 720,
     minHeight: 480,
     title: "Mini",
-    backgroundColor: "#111113",
+    backgroundColor: "#ffffff",
     show: false,
     autoHideMenuBar: process.platform !== "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
-    trafficLightPosition: { x: 14, y: 16 },
+    trafficLightPosition: { x: 16, y: 18 },
     titleBarOverlay:
       process.platform === "darwin"
         ? undefined
-        : { color: "#161618", symbolColor: "#f4f4f5", height: 36 },
+        : { color: "#ffffff", symbolColor: "#111111", height: 36 },
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,
