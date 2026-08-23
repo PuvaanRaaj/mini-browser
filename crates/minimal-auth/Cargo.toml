@@ -11,6 +11,7 @@ argon2 = "0.5"
 base64 = "0.22"
 cbc = { version = "0.1", features = ["alloc", "block-padding"] }
 md-5 = "0.10"
+minimal-otp = { path = "../minimal-otp" }
 percent-encoding = "2"
 serde = "1"
 serde_json = "1"

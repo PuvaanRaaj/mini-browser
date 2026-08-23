@@ -58,6 +58,38 @@ pub struct OtpRecord {
     pub algorithm: Algorithm,
 }
 
+/// Generates the current code for a successfully imported record.
+///
+/// # Errors
+///
+/// Returns the OTP engine's validation or decoding error. The record secret
+/// is never included in the error value.
+pub fn generate_code(
+    record: &OtpRecord,
+    unix_seconds: u64,
+) -> Result<String, minimal_otp::OtpError> {
+    minimal_otp::generate(
+        match record.kind {
+            OtpKind::Totp => minimal_otp::OtpKind::Totp,
+            OtpKind::Hotp => minimal_otp::OtpKind::Hotp,
+            OtpKind::Steam => minimal_otp::OtpKind::Steam,
+            OtpKind::Battle => minimal_otp::OtpKind::Battle,
+            OtpKind::Hex => minimal_otp::OtpKind::Hex,
+            OtpKind::Hhex => minimal_otp::OtpKind::Hhex,
+        },
+        &record.secret,
+        record.counter,
+        record.period,
+        record.digits,
+        match record.algorithm {
+            Algorithm::Sha1 => minimal_otp::Algorithm::Sha1,
+            Algorithm::Sha256 => minimal_otp::Algorithm::Sha256,
+            Algorithm::Sha512 => minimal_otp::Algorithm::Sha512,
+        },
+        unix_seconds,
+    )
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum IssueKind {
     Malformed,

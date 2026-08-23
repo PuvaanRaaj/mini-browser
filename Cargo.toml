@@ -7,6 +7,7 @@ members = [
     "crates/minimal-blocker",
     "crates/minimal-core",
     "crates/minimal-ffi",
+    "crates/minimal-otp",
     "crates/minimal-storage",
 ]
 resolver = "3"

@@ -124,6 +124,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-encoding"
+version = "2.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -189,6 +195,15 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi",
+]
+
+[[package]]
+name = "hmac"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
+dependencies = [
+ "digest",
 ]
 
 [[package]]
@@ -364,6 +379,7 @@ dependencies = [
  "base64",
  "cbc",
  "md-5",
+ "minimal-otp",
  "percent-encoding",
  "serde",
  "serde_json",
@@ -403,6 +419,17 @@ name = "minimal-ffi"
 version = "0.1.0"
 dependencies = [
  "minimal-core",
+]
+
+[[package]]
+name = "minimal-otp"
+version = "0.1.0"
+dependencies = [
+ "data-encoding",
+ "hmac",
+ "sha1",
+ "sha2",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -570,6 +597,17 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "sha1"
+version = "0.10.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a978451301f4db1d02937a4ab3ccce137717b81826e79b7d49ffe3244a13c3b8"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]
