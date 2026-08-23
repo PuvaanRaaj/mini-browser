@@ -4,23 +4,44 @@ A personal Chromium browser for macOS: fresh session, thin chrome, Orion-style f
 
 Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
 
-**Repository:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser) on [Origin](https://origin.cursor.com)
+**Public (anyone):** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)  
+**Cursor / Origin:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser)
 
 License: [Apache-2.0](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Clone
+
+Non-Cursor users (no login):
+
+```bash
+git clone https://github.com/PuvaanRaaj/mini-browser.git
+cd mini-browser
+```
+
+Cursor / Origin:
 
 ```bash
 origin repo clone puvaanraaj/mini-browser mini-browser
 cd mini-browser
 ```
 
-Or HTTPS:
+## GitHub ↔ Origin mirror
 
-```bash
-git clone https://origin.cursor.com/puvaanraaj/mini-browser.git mini-browser
-cd mini-browser
-```
+GitHub is the public source of truth. Origin should be a **Sync from GitHub** mirror so Cursor agents and PRs stay in sync.
+
+This cloud agent cannot enable that (Origin token is scoped to the session repo). On your machine:
+
+1. Push the latest `main` to GitHub:
+   ```bash
+   git remote add github https://github.com/PuvaanRaaj/mini-browser.git
+   git push -u github main
+   ```
+2. Connect the [Cursor GitHub app](https://cursor.com/dashboard/integrations) if it is not already.
+3. Open [cursor.com/codebase](https://cursor.com/codebase) → **Sync from GitHub** → `PuvaanRaaj/mini-browser`.
+4. If Origin already has a standalone `mini-browser` (empty, created before GitHub), delete that Origin repo first, then sync. Mirroring needs GitHub as the source; it cannot attach to an existing Origin-native repo with the same name.
+5. Confirm under Origin **Settings → General**: Origin = mirror, GitHub = source. Pushes to the Origin remote then pass through to GitHub.
+
+After that, public clones and PRs go to GitHub. Cursor agents use the Origin copy.
 
 ## Run on a Mac
 

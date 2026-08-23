@@ -7,7 +7,7 @@
   "author": "Mini contributors",
   "repository": {
     "type": "git",
-    "url": "https://origin.cursor.com/puvaanraaj/mini-browser.git"
+    "url": "https://github.com/PuvaanRaaj/mini-browser.git"
   },
   "main": "./out/main/index.js",
   "scripts": {
