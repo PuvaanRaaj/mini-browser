@@ -96,11 +96,11 @@ export function AuthenticatorPanel({
                     }}
                   >
                     <Countdown remaining={remaining} period={account.period} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs text-muted-foreground">
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-xs text-muted-foreground">
                         {accountTitle(account)}
                       </span>
-                      <span className="mt-0.5 block font-mono text-lg tracking-[0.18em] text-foreground">
+                      <span className="font-mono text-lg tracking-[0.18em] text-foreground">
                         {formatCode(code)}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
