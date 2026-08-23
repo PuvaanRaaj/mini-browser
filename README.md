@@ -1,73 +1,56 @@
 # Mini
 
-A personal Chromium browser for the moments your everyday browser is too much: screen shares, streams, and throwaway tests. Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)) and Orion's focus mode.
+A personal Chromium browser for macOS. Fresh session, thin chrome, Orion-style focus mode, and a built-in TOTP authenticator.
 
-Mini keeps the chrome thin, the session empty, and — the one extra we actually needed — a TOTP authenticator beside the page.
+Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window, not a website pretending to be a browser.
 
-## Why this exists
-
-A full browser is a pile of cookies, extensions, and logged-in tabs. Mini is the opposite:
-
-- **Fresh Chromium** every time, isolated from your daily profile
-- **Focus mode** hides tabs and the toolbar so you can share just the page
-- **Built-in 2FA** so you can still sign in without opening your main browser or a separate authenticator app
-- **Hackable** TypeScript throughout, plus a real Chrome extension in `extension/`
-
-## Run it
-
-You need Node 20+ and Chrome or Chromium on the PATH.
+## Run on a Mac
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://127.0.0.1:43217](http://127.0.0.1:43217). Mini starts a throwaway Chromium profile in the background and streams it into the window.
+That opens the Mini app. To build `Mini.app`:
 
 ```bash
-npm test
-npm run build
-npm start
+npm run dist:mac
+open release/mac/Mini.app
 ```
 
-If Playwright cannot find system Chrome, install a bundled browser:
+The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
 
-```bash
-npx playwright install chromium
-```
+## Why this exists
+
+A full browser is cookies, extensions, and logged-in tabs. Mini is the opposite:
+
+- **Native macOS window** with traffic lights and a hidden title bar
+- **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
+- **Focus mode** (`⌘⇧F`) hides tabs and the toolbar for screen shares
+- **Authenticator** (`⌘⇧A`) so you can still 2FA without your daily browser
 
 ## Keyboard
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl/⌘ L` | Focus the address bar |
-| `Ctrl/⌘ T` | New tab |
-| `Ctrl/⌘ W` | Close tab |
-| `Ctrl/⌘ R` | Reload |
-| `Ctrl/⌘ Shift+F` | Focus mode |
-| `Ctrl/⌘ Shift+A` | Authenticator |
-| `Alt ← / →` | Back / forward |
+| `⌘L` | Focus the address bar |
+| `⌘T` | New tab |
+| `⌘W` | Close tab |
+| `⌘R` | Reload |
+| `⌘⇧F` | Focus mode |
+| `⌘⇧A` | Authenticator |
+| `⌘[ / ⌘]` | Back / forward |
 
-Search queries go to DuckDuckGo. Anything that looks like a host is opened with `https://`.
+Search queries go to DuckDuckGo. Hostnames open as `https://`.
 
 ## Authenticator
 
-The side panel (`Ctrl/⌘ Shift+A`) is the daily driver: paste an `otpauth://` URI or a base32 secret, click a code to copy it, watch the 30s countdown.
+The side panel is the daily driver: paste an `otpauth://` URI or a base32 secret, click a code to copy it.
 
-Secrets are stored in this browser's `localStorage`. They never enter the ephemeral Chromium profile unless you paste a code into a page.
+Secrets live in Mini's own renderer storage. They survive **Reset Session**, which only throws away the throwaway Chromium profile.
 
-The same authenticator also ships as a Manifest V3 extension:
-
-1. Chrome → `chrome://extensions`
-2. Enable Developer mode
-3. Load unpacked → select the `extension/` folder
-
-Mini tries to load that extension into its own Chromium session on launch. The panel still works if Chrome refuses extensions in headless mode.
-
-## Reset
-
-**Reset session** throws away cookies, storage, and tabs and boots a new profile. Authenticator accounts are untouched.
+The same authenticator ships as a Manifest V3 extension in `extension/`. Mini loads it into the guest session; you can also Load unpacked in Chrome.
 
 ## Stack
 
-Next.js, Playwright/Chromium, Tailwind, shadcn/ui, [`otpauth`](https://github.com/hectorm/otpauth).
+Electron (Chromium), Vite, React, Tailwind, shadcn/ui, [`otpauth`](https://github.com/hectorm/otpauth).

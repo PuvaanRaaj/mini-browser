@@ -13,9 +13,10 @@
 # testing
 /coverage
 
-# next.js
-/.next/
+# electron
 /out/
+/release/
+/.next/
 
 # production
 /build

@@ -1,5 +1,3 @@
-"use client";
-
 import { PlusIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,7 @@ export function TabStrip({
   onNew: () => void;
 }) {
   return (
-    <div className="flex min-w-0 items-end gap-1">
+    <div className="no-drag flex min-w-0 items-end gap-1">
       <div className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;

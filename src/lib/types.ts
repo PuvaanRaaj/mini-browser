@@ -13,14 +13,9 @@ export type BrowserState = {
   tabs: TabInfo[];
   activeTabId: string | null;
   sessionId: string;
-  status: "idle" | "starting" | "ready" | "error";
+  status: "ready" | "error";
   error: string | null;
   extensionLoaded: boolean;
-};
-
-export type FramePayload = {
-  tabId: string;
-  data: string;
 };
 
 export type BrowserCommand =
@@ -32,53 +27,12 @@ export type BrowserCommand =
   | { type: "newTab" }
   | { type: "closeTab"; id: string }
   | { type: "switchTab"; id: string }
-  | {
-      type: "click";
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      button?: "left" | "right" | "middle";
-      clickCount?: number;
-    }
-  | {
-      type: "move";
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }
-  | {
-      type: "wheel";
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      deltaX: number;
-      deltaY: number;
-    }
-  | { type: "type"; text: string }
-  | {
-      type: "key";
-      key: string;
-      code?: string;
-      down: boolean;
-      modifiers: {
-        alt: boolean;
-        ctrl: boolean;
-        meta: boolean;
-        shift: boolean;
-      };
-    }
-  | { type: "resize"; width: number; height: number }
-  | { type: "resetSession" }
-  | { type: "copySelection" };
+  | { type: "resetSession" };
 
-export type CopyResult = {
-  text: string;
-};
-
-export type CommandResult = {
-  state: BrowserState;
-  copied?: string;
+export type LayoutRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  visible: boolean;
 };

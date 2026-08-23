@@ -1,5 +1,3 @@
-"use client";
-
 import { KeyRoundIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,10 +7,12 @@ export function StartPage({
   onNavigate,
   onOpenAuthenticator,
   extensionLoaded,
+  isNative,
 }: {
   onNavigate: (value: string) => void;
   onOpenAuthenticator: () => void;
   extensionLoaded: boolean;
+  isNative: boolean;
 }) {
   const mod = modLabel();
 
@@ -26,8 +26,9 @@ export function StartPage({
           Mini
         </h1>
         <p className="mx-auto mt-3 max-w-md text-center text-sm leading-6 text-muted-foreground">
-          A clean Chromium session for screen shares, streams, and tests. Nothing
-          from your everyday browser comes along.
+          {isNative
+            ? "A clean Chromium session for screen shares, streams, and tests. Nothing from your everyday browser comes along."
+            : "This is the Mini chrome. Run the macOS app to browse with a real Chromium session — the authenticator already works here."}
         </p>
 
         <form
