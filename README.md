@@ -57,7 +57,23 @@ npm run dist:mac
 npm run open:mac
 ```
 
-From the repo root: `open release/mac-arm64/Minimal.app`  
+From the repo root: `open release/mac-arm64/Minimal.app`
+
+## Landing page
+
+`website/` holds a zero-dependency landing page served by [Bun](https://bun.sh):
+
+```bash
+npm run site        # → http://localhost:3000   (bun website/server.ts)
+```
+
+- Detects the visitor's OS from the User-Agent (server-side, refined client-side) and preselects macOS / Windows / Linux.
+- `/download/latest` streams the newest `.dmg` in `release/` (or `.exe` / `.AppImage` when those targets exist) and falls back to GitHub Releases when no artifact is present.
+- Install card shows `brew install --cask puvaanraaj/tap/minimal` and a one-line `curl` download for macOS; Windows and Linux visitors get an honest "coming soon" plus build-from-source.
+- `?os=windows` (or `linux`/`mac`) previews another platform's state — handy for testing.
+- `PORT=4000 npm run site` changes the port.
+
+For the Homebrew command to work publicly, publish a `homebrew-tap` repo with a Cask for Minimal; for the cURL fallback to work off localhost, publish the `.dmg` as a GitHub release.
 If you already `cd`'d into `release/`: `open mac-arm64/Minimal.app`
 
 You can also mount the disk image: `open release/Minimal-0.1.0-mac-arm64.dmg`.

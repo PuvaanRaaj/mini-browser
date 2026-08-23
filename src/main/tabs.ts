@@ -251,12 +251,15 @@ export class MiniSession {
   }
 
   private destroyView(tab: TabRecord): void {
-    if (!tab.view) return;
-    if (!tab.view.webContents.isDestroyed()) {
-      this.window.contentView.removeChildView(tab.view);
-      tab.view.webContents.close();
-    }
+    const view = tab.view;
     tab.view = null;
+    if (!view || this.window.isDestroyed()) return;
+
+    const { webContents } = view;
+    if (webContents.isDestroyed()) return;
+
+    this.window.contentView.removeChildView(view);
+    if (!webContents.isDestroyed()) webContents.close();
   }
 
   private layoutViews(): void {
