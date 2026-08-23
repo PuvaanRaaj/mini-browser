@@ -31,9 +31,8 @@ export function StartPage({
   return (
     <div className="mini-start">
       <div className="mini-start-inner">
-        <div className="mini-start-mark">
-          <span className="mini-start-ring" aria-hidden="true" />
-          <span className="mini-start-word">Minimal</span>
+        <div className="mini-start-logo" role="img" aria-label="Minimal">
+          <span className="mini-start-logo-ring" aria-hidden="true" />
         </div>
 
         <p className="mini-start-greeting">{greeting()}</p>

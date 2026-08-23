@@ -456,31 +456,31 @@ body,
   app-region: drag;
 }
 
-/* The start page borrows the landing site's palette: near-black with a faint
-   dot grid. Scoped to .mini-start so the browsing chrome stays white. */
+/* Layered gradient rather than a flat fill: a cool wash from the top, a warmer
+   one from below, over a near-black base. Kept low-saturation so the page still
+   reads as black and the page content stays the brightest thing on screen. */
 .mini-start {
-  background-color: #0a0a0b;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgba(255, 255, 255, 0.055) 1px,
-    transparent 0
-  );
-  background-size: 30px 30px;
+  background-color: #08080a;
+  background-image:
+    radial-gradient(115% 80% at 50% -12%, #26263a 0%, transparent 60%),
+    radial-gradient(95% 72% at 50% 110%, #221a2e 0%, transparent 56%),
+    radial-gradient(70% 50% at 12% 42%, #141a26 0%, transparent 55%),
+    linear-gradient(180deg, #0d0d13 0%, #08080a 100%);
 }
 
-/* A soft pool of light behind the search field. */
+/* A soft pool of light behind the logo and search field. */
 .mini-start::before {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(760px, 90%);
-  height: 420px;
+  width: min(820px, 92%);
+  height: 460px;
   content: "";
-  transform: translate(-50%, -58%);
+  transform: translate(-50%, -56%);
   background: radial-gradient(
     ellipse at center,
-    rgba(255, 255, 255, 0.055),
-    transparent 70%
+    rgba(255, 255, 255, 0.06),
+    transparent 68%
   );
   pointer-events: none;
 }
@@ -494,29 +494,80 @@ body,
   app-region: no-drag;
 }
 
-.mini-start-mark {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+.mini-start-logo {
+  position: relative;
+  display: grid;
+  width: 84px;
+  height: 84px;
+  place-items: center;
 }
 
-.mini-start-ring {
-  box-sizing: border-box;
-  width: 15px;
-  height: 15px;
-  border: 2.5px solid #111111;
+/* A bright arc travelling around the ring. A plain rotating circle would look
+   static, so the highlight is what actually reads as movement. */
+.mini-start-logo-ring {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(250, 250, 250, 0.14) 0deg,
+    rgba(250, 250, 250, 0.18) 140deg,
+    rgba(255, 255, 255, 0.98) 260deg,
+    rgba(250, 250, 250, 0.45) 310deg,
+    rgba(250, 250, 250, 0.14) 360deg
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 15px),
+    #000 calc(100% - 14px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 15px),
+    #000 calc(100% - 14px)
+  );
+  animation: mini-logo-spin 6.5s linear infinite;
 }
 
-.mini-start-word {
-  color: #111111;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+/* A faint halo so the ring sits in the gradient rather than on top of it. */
+.mini-start-logo::after {
+  position: absolute;
+  z-index: -1;
+  width: 150%;
+  height: 150%;
+  content: "";
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.09), transparent 62%);
+  animation: mini-logo-breathe 6.5s ease-in-out infinite;
+}
+
+@keyframes mini-logo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mini-logo-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-start-logo-ring,
+  .mini-start-logo::after {
+    animation: none;
+  }
 }
 
 .mini-start-greeting {
-  margin: 10px 0 22px;
+  margin: 20px 0 22px;
   color: #a1a1aa;
   font-size: 13px;
   letter-spacing: -0.01em;
@@ -608,14 +659,6 @@ body,
 
 .mini-start-corner .mini-corner-ext {
   position: static;
-}
-
-.mini-start .mini-start-ring {
-  border-color: #fafafa;
-}
-
-.mini-start .mini-start-word {
-  color: #fafafa;
 }
 
 .mini-start .mini-start-greeting {
