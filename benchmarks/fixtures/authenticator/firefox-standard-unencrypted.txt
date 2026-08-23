@@ -1,0 +1,3 @@
+otpauth://totp/Example:alice%40example.test?secret=JBSWY3DPEHPK3PXP&issuer=Example
+otpauth://totp/Slow%20Example:carol?secret=MZXW6YTBOI======&issuer=Slow%20Example&period=60&digits=8&algorithm=SHA512
+otpauth://hotp/Counter%20Example:bob?secret=KRUGS4ZANFZSAYJA&issuer=Counter%20Example&counter=7&digits=8&algorithm=SHA256

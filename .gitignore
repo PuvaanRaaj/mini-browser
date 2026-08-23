@@ -19,6 +19,8 @@
 /public/
 /release/
 /.next/
+/target/
+**/.build/
 
 # misc
 .DS_Store

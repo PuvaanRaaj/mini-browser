@@ -1,0 +1,69 @@
+name: Native rewrite
+
+on:
+  pull_request:
+  push:
+    branches: [main, codex-rust-rewrite]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-rewrite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo test --workspace --all-targets
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  macos-shell:
+    name: macOS native shell
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build --package-path apps/macos
+
+  windows-shell:
+    name: Windows native shell (${{ matrix.arch }})
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - run: cargo check --workspace --target ${{ matrix.target }}
+
+  remote-content-boundary:
+    name: Remote content privilege boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject page-accessible native bridges
+        shell: bash
+        run: |
+          if grep -R -n -E --include='*.rs' --include='*.swift' \
+            'AddHostObjectToScript[[:space:]]*\(|addScriptMessageHandler[[:space:]]*\(' apps; then
+            echo 'Remote page bridge APIs are forbidden in the native browser shells.' >&2
+            exit 1
+          fi

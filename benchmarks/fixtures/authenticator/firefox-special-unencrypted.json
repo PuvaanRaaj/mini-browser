@@ -1,0 +1,45 @@
+{
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+    "dataType": "OTPStorage",
+    "encrypted": false,
+    "hash": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "index": 0,
+    "type": "totp",
+    "secret": "JBSWY3DPEHPK3PXP",
+    "issuer": "Example",
+    "account": "alice@example.test"
+  },
+  "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+    "dataType": "OTPStorage",
+    "encrypted": false,
+    "hash": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "index": 1,
+    "type": "hotp",
+    "secret": "KRUGS4ZANFZSAYJA",
+    "issuer": "Counter Example",
+    "account": "bob",
+    "counter": 7,
+    "digits": 8,
+    "algorithm": "SHA256"
+  },
+  "cccccccc-cccc-4ccc-8ccc-cccccccccccc": {
+    "dataType": "OTPStorage",
+    "encrypted": false,
+    "hash": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "index": 2,
+    "type": "steam",
+    "secret": "MFRGGZDFMZTWQ2LK",
+    "issuer": "Steam",
+    "account": "fixture"
+  },
+  "dddddddd-dddd-4ddd-8ddd-dddddddddddd": {
+    "dataType": "OTPStorage",
+    "encrypted": false,
+    "hash": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "index": 3,
+    "type": "battle",
+    "secret": "ONSWG4TFOQ======",
+    "issuer": "Battle.net",
+    "account": "US-0000-0000-0000"
+  }
+}

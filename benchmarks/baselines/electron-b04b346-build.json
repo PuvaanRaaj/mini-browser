@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "kind": "legacy_electron_build_control",
+  "captured_at": "2026-08-23T23:46:00+08:00",
+  "commit": "b04b346f04f14a28e4d8ef1e82a1af830dfd319e",
+  "machine": {
+    "model": "MacBook Pro Mac17,9",
+    "chip": "Apple M5 Pro",
+    "logical_cores": 18,
+    "memory_bytes": 25769803776,
+    "os": "macOS 26.6.1 (25G76)",
+    "architecture": "arm64"
+  },
+  "toolchain": {
+    "node": "26.7.0",
+    "npm": "11.19.0",
+    "electron": "43.4.1"
+  },
+  "command": "npm ci && /usr/bin/time -l npm run build && npm run check:bundle",
+  "build": {
+    "wall_time_ms": 7500,
+    "maximum_resident_bytes": 438648832,
+    "files_bytes": {
+      "main_js": 32268,
+      "preload_js": 1024,
+      "renderer_html": 736,
+      "renderer_entry_js": 737628,
+      "renderer_authenticator_js": 251865,
+      "renderer_css": 59687
+    },
+    "bundle_budget_passed": true
+  },
+  "limitations": [
+    "This measures a production build, not browser runtime speed.",
+    "It is not comparable to results captured on another machine.",
+    "Runtime, package, energy, navigation, and competitor samples are pending."
+  ]
+}

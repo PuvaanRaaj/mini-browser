@@ -1,0 +1,11 @@
+{
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+    "encrypted": true,
+    "hash": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "index": 0,
+    "type": "totp",
+    "secret": "U2FsdGVkX18zUNoaFMPI7irymRUI54GTnYK4dKcWhVs3Y0nYFBBuvKRWJpv8AYcC",
+    "issuer": "Example",
+    "account": "alice@example.test"
+  }
+}

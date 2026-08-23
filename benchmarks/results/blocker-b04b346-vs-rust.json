@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-23T23:50:00+08:00",
+  "machine": "MacBook Pro Mac17,9, Apple M5 Pro, macOS 26.6.1",
+  "workload": {
+    "rule_count": 100000,
+    "rust_lookups_per_sample": 200000,
+    "rust_samples": 11,
+    "mix": "deterministic blocked and unblocked ASCII hostnames"
+  },
+  "legacy_electron_javascript": {
+    "algorithm": "linear rule scan for each request hostname",
+    "non_matching_lookup_ms_range": [2.36, 2.51],
+    "source": "read-only current-core audit at commit b04b346"
+  },
+  "rust_minimal_blocker": {
+    "algorithm": "HashSet exact label-suffix probes",
+    "median_sample_ms": 19.813,
+    "median_ns_per_lookup": 99.1,
+    "command": "cargo run --release -p minimal-blocker --bin blocker-bench"
+  },
+  "derived": {
+    "approximate_hot_lookup_speedup_range": [23814, 25328]
+  },
+  "limitations": [
+    "This is a blocker data-structure microbenchmark, not page-load speed.",
+    "The legacy and Rust harnesses differ; use the result to detect magnitude and retain raw methodology, not as a browser-wide claim.",
+    "End-to-end page request and byte-reduction measurements are still required."
+  ]
+}
