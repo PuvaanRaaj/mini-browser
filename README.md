@@ -4,21 +4,21 @@ A personal Chromium browser for macOS: fresh session, thin chrome, Orion-style f
 
 Inspired by Guillermo Rauch's Mini (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
 
-**Repository:** [puvaanraaj/tmp-fb57f3438b1f4856](https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856) on [Origin](https://origin.cursor.com)
+**Repository:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser) on [Origin](https://origin.cursor.com)
 
 License: [Apache-2.0](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Clone
 
 ```bash
-origin repo clone puvaanraaj/tmp-fb57f3438b1f4856 mini-browser
+origin repo clone puvaanraaj/mini-browser mini-browser
 cd mini-browser
 ```
 
 Or HTTPS:
 
 ```bash
-git clone https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856.git mini-browser
+git clone https://origin.cursor.com/puvaanraaj/mini-browser.git mini-browser
 cd mini-browser
 ```
 

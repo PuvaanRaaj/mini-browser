@@ -2,14 +2,14 @@
 
 Thanks for helping with a small, hackable Chromium browser.
 
-Canonical remote is Origin: [puvaanraaj/tmp-fb57f3438b1f4856](https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856). Install the [Origin CLI](https://origin.cursor.com) (`origin`) so you can clone and open pull requests.
+Canonical remote is Origin: [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser). Install the [Origin CLI](https://origin.cursor.com) (`origin`) so you can clone and open pull requests.
 
 ## Setup (macOS)
 
 You need Node 20+ and Xcode command line tools.
 
 ```bash
-origin repo clone puvaanraaj/tmp-fb57f3438b1f4856 mini-browser
+origin repo clone puvaanraaj/mini-browser mini-browser
 cd mini-browser
 npm install
 npm run dev
