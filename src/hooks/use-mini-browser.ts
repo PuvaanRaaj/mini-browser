@@ -10,6 +10,7 @@ const emptyTab = (id: string): TabInfo => ({
   loading: false,
   canGoBack: false,
   canGoForward: false,
+  favicon: null,
   isStartPage: true,
   error: null,
 });

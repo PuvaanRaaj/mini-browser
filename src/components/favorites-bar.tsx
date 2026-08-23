@@ -1,15 +1,9 @@
 import { XIcon } from "lucide-react";
 
+import { SiteIcon } from "@/components/site-icon";
 import type { Bookmark } from "@/lib/types";
 import { hostnameOf } from "@/lib/url";
 import { cn } from "@/lib/utils";
-
-/** A letter badge instead of a real favicon: fetching one would announce every
-    saved domain to a third party, which this browser otherwise blocks. */
-function badgeFor(bookmark: Bookmark): string {
-  const source = hostnameOf(bookmark.url) || bookmark.title;
-  return (source.trim()[0] ?? "?").toUpperCase();
-}
 
 export function FavoritesBar({
   bookmarks,
@@ -41,7 +35,12 @@ export function FavoritesBar({
             onClick={() => onOpen(bookmark.url)}
             title={bookmark.url}
           >
-            <span className="mini-fav-badge">{badgeFor(bookmark)}</span>
+            <SiteIcon
+              favicon={bookmark.favicon}
+              url={bookmark.url}
+              title={bookmark.title}
+              className="mini-fav-badge"
+            />
             <span className="mini-fav-title">
               {bookmark.title || hostnameOf(bookmark.url)}
             </span>

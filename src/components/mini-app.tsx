@@ -59,7 +59,7 @@ export function MiniApp() {
 
   const toggleBookmark = useCallback(() => {
     if (!activeTab || activeTab.isStartPage) return;
-    toggle(activeTab.url, activeTab.title);
+    toggle(activeTab.url, activeTab.title, activeTab.favicon);
   }, [activeTab, toggle]);
 
   const publishLayout = useCallback(() => {

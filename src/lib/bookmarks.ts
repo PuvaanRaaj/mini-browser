@@ -18,7 +18,9 @@ function parseBookmarks(raw: string): Bookmark[] {
   try {
     const parsed = JSON.parse(raw) as Bookmark[];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) => item && typeof item.url === "string");
+    return parsed
+      .filter((item) => item && typeof item.url === "string")
+      .map((item) => ({ ...item, favicon: item.favicon ?? null }));
   } catch {
     return [];
   }
@@ -37,9 +39,9 @@ function subscribe(onStoreChange: () => void) {
 /** Bookmarks compare by URL, so the same page saved twice stays one entry. */
 export function useBookmarks(): {
   bookmarks: Bookmark[];
-  add: (url: string, title: string) => void;
+  add: (url: string, title: string, favicon?: string | null) => void;
   remove: (id: string) => void;
-  toggle: (url: string, title: string) => void;
+  toggle: (url: string, title: string, favicon?: string | null) => void;
   isSaved: (url: string) => boolean;
 } {
   const raw = useSyncExternalStore(subscribe, readRaw, () => "[]");
@@ -55,7 +57,7 @@ export function useBookmarks(): {
   }, []);
 
   const add = useCallback(
-    (url: string, title: string) => {
+    (url: string, title: string, favicon: string | null = null) => {
       if (!url || url === "about:blank") return;
       const current = parseBookmarks(readRaw());
       if (current.some((item) => item.url === url)) return;
@@ -65,6 +67,7 @@ export function useBookmarks(): {
           id: crypto.randomUUID(),
           url,
           title: title || hostnameOf(url) || url,
+          favicon,
           createdAt: Date.now(),
         },
       ]);
@@ -80,11 +83,11 @@ export function useBookmarks(): {
   );
 
   const toggle = useCallback(
-    (url: string, title: string) => {
+    (url: string, title: string, favicon: string | null = null) => {
       const current = parseBookmarks(readRaw());
       const existing = current.find((item) => item.url === url);
       if (existing) write(current.filter((item) => item.id !== existing.id));
-      else add(url, title);
+      else add(url, title, favicon);
     },
     [add, write],
   );

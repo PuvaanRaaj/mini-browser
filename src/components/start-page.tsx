@@ -1,6 +1,7 @@
 import { KeyRoundIcon, SettingsIcon } from "lucide-react";
 
 import { Omnibox } from "@/components/omnibox";
+import { SiteIcon } from "@/components/site-icon";
 import { modLabel } from "@/lib/mod";
 import type { Bookmark } from "@/lib/types";
 import { hostnameOf } from "@/lib/url";
@@ -49,11 +50,12 @@ export function StartPage({
                 onClick={() => onNavigate(bookmark.url)}
                 title={bookmark.url}
               >
-                <span className="mini-start-tile-badge">
-                  {(hostnameOf(bookmark.url) || bookmark.title || "?")
-                    .trim()[0]
-                    ?.toUpperCase() ?? "?"}
-                </span>
+                <SiteIcon
+                  favicon={bookmark.favicon}
+                  url={bookmark.url}
+                  title={bookmark.title}
+                  className="mini-start-tile-badge"
+                />
                 <span className="mini-start-tile-title">
                   {bookmark.title || hostnameOf(bookmark.url)}
                 </span>

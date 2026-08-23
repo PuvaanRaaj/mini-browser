@@ -23,6 +23,7 @@ type TabRecord = {
   loading: boolean;
   error: string | null;
   isStartPage: boolean;
+  favicon: string | null;
 };
 
 export class MiniSession {
@@ -173,6 +174,7 @@ export class MiniSession {
       loading: false,
       error: null,
       isStartPage: true,
+      favicon: null,
     };
     this.tabs.set(tab.id, tab);
     this.order.push(tab.id);
@@ -236,6 +238,10 @@ export class MiniSession {
       }
       return { action: "deny" };
     });
+    wc.on("page-favicon-updated", (_event, icons) => {
+      void this.captureFavicon(tab, icons[0]);
+    });
+
     wc.on("page-title-updated", (_event, title) => {
       tab.title = title || tab.title;
       this.onState();
@@ -251,6 +257,7 @@ export class MiniSession {
       this.onState();
     });
     wc.on("did-navigate", (_event, url) => {
+      tab.favicon = null;
       tab.url = url;
       tab.isStartPage = false;
       this.onState();
@@ -354,6 +361,35 @@ export class MiniSession {
     return this.viewFor();
   }
 
+  /**
+   * Inline the page's own icon as a data URL. Fetched in the guest session from
+   * a site the user just loaded, so this tells no one anything new — unlike
+   * asking a favicon service, which would hand over the browsing history.
+   */
+  private async captureFavicon(tab: TabRecord, iconUrl: string | undefined): Promise<void> {
+    if (!iconUrl || tab.isStartPage) return;
+    try {
+      const ses = await this.guestSession();
+      const response = await ses.fetch(iconUrl);
+      if (!response.ok) return;
+
+      const type = response.headers.get("content-type") ?? "image/png";
+      if (!type.startsWith("image/")) return;
+
+      const bytes = Buffer.from(await response.arrayBuffer());
+      // Keeps a stray multi-megabyte "icon" out of the state we ship to the
+      // renderer and out of saved bookmarks.
+      if (bytes.byteLength === 0 || bytes.byteLength > 64 * 1024) return;
+
+      const next = `data:${type};base64,${bytes.toString("base64")}`;
+      if (tab.favicon === next) return;
+      tab.favicon = next;
+      this.onState();
+    } catch {
+      // A missing icon is not worth surfacing; the letter badge covers it.
+    }
+  }
+
   private toInfo(tab: TabRecord): TabInfo {
     const history = tab.view?.webContents.navigationHistory;
     return {
@@ -364,6 +400,7 @@ export class MiniSession {
       canGoBack: history?.canGoBack() ?? false,
       canGoForward: history?.canGoForward() ?? false,
       isStartPage: tab.isStartPage,
+      favicon: tab.favicon,
       error: tab.error,
     };
   }

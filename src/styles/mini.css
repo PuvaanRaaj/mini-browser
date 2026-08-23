@@ -90,6 +90,30 @@ body,
   cursor: pointer;
 }
 
+.mini-site-icon {
+  display: flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #232327;
+  color: #a1a1aa;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.mini-site-icon-img {
+  background: transparent;
+  object-fit: contain;
+}
+
+.mini-tab-label {
+  gap: 7px;
+}
+
 .mini-tab-title {
   overflow: hidden;
   font-size: 13px;
@@ -473,6 +497,10 @@ body,
   color: #52525b;
   font-size: 14px;
   font-weight: 600;
+}
+
+.mini-start-tile-badge.mini-site-icon-img {
+  padding: 6px;
 }
 
 .mini-start-tile-title {
