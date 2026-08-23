@@ -1,6 +1,6 @@
 # Performance and release roadmap
 
-This roadmap keeps the browser fast while making releases predictable. The GitHub `main` branch remains the source of truth; Origin and Vercel consume it.
+This roadmap keeps the browser fast while making releases predictable. The GitHub `main` branch remains the source of truth, and Vercel consumes it.
 
 ## 1. Measure before changing behavior
 

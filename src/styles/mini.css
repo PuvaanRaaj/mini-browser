@@ -1,5 +1,4 @@
-/* Layout that must work even if Tailwind fails to emit utilities in the
-   packaged app. Guillermo's Mini is a white canvas + one search field. */
+/* Keep the packaged shell usable even if utility CSS is unavailable. */
 
 html,
 body,

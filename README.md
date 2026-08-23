@@ -1,48 +1,21 @@
 # Minimal
 
-A personal Chromium browser for macOS. White window, almost no chrome: one search field on a new tab, then a slim title pill and URL bar over the page. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
+Minimal is a focused Chromium browser for macOS: one search field, almost no chrome, a fresh session on every launch, built-in ad blocking, and a local TOTP authenticator.
 
-This one is a real Mac app — Chromium in a native window.
+It is a native desktop app designed to keep browsing fast, private, and distraction-free.
 
-**Public (anyone):** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)  
-**Cursor / Origin:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser)
+- **Repository:** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)
+- **Website:** [mini-browser-v2.vercel.app](https://mini-browser-v2.vercel.app)
+- **Releases:** [GitHub Releases](https://github.com/PuvaanRaaj/mini-browser/releases)
 
-Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Clone
-
-Non-Cursor users (no login):
 
 ```bash
 git clone https://github.com/PuvaanRaaj/mini-browser.git
 cd mini-browser
 ```
-
-Cursor / Origin:
-
-```bash
-origin repo clone puvaanraaj/mini-browser mini-browser
-cd mini-browser
-```
-
-## GitHub ↔ Origin mirror
-
-GitHub is the public source of truth. Origin should be a **Sync from GitHub** mirror so Cursor agents and PRs stay in sync.
-
-This cloud agent cannot enable that (Origin token is scoped to the session repo). On your machine:
-
-1. Push the latest `main` to GitHub:
-   ```bash
-   git remote add github https://github.com/PuvaanRaaj/mini-browser.git
-   git push -u github main
-   ```
-2. Connect the [Cursor GitHub app](https://cursor.com/dashboard/integrations) if it is not already.
-3. Open [cursor.com/codebase](https://cursor.com/codebase) → **Sync from GitHub** → `PuvaanRaaj/mini-browser`.
-4. If Origin already has a standalone `mini-browser` (empty, created before GitHub), delete that Origin repo first, then sync. Mirroring needs GitHub as the source; it cannot attach to an existing Origin-native repo with the same name.
-5. Confirm under Origin **Settings → General**: Origin = mirror, GitHub = source. Pushes to the Origin remote then pass through to GitHub.
-
-After that, public clones and PRs go to GitHub. Cursor agents use the Origin copy.
-
 ## Run on a Mac
 
 ```bash
@@ -61,7 +34,7 @@ From the repo root: `open release/mac-arm64/Minimal.app`
 
 ## Landing page
 
-`website/` holds the landing page. Run it locally with:
+`website/` holds the landing page. Run it locally with Bun 1.4.0 or newer:
 
 ```bash
 npm run site        # → http://localhost:3000
