@@ -65,6 +65,7 @@ pub struct BenchmarkSettings {
 #[serde(deny_unknown_fields)]
 pub struct RunMetadata {
     pub schema_version: String,
+    pub benchmark_version: String,
     pub run_id: String,
     pub captured_at_utc: String,
     pub git_commit: String,
@@ -314,11 +315,17 @@ pub fn validate_comparison(left: &RunMetadata, right: &RunMetadata) -> Result<()
     if left.schema_version != right.schema_version {
         return Err(BenchmarkError::ComparisonMismatch("schema_version"));
     }
+    if left.benchmark_version != right.benchmark_version {
+        return Err(BenchmarkError::ComparisonMismatch("benchmark_version"));
+    }
     if left.machine != right.machine {
         return Err(BenchmarkError::ComparisonMismatch("machine"));
     }
     if left.execution_mode != right.execution_mode {
         return Err(BenchmarkError::ComparisonMismatch("execution_mode"));
+    }
+    if left.settings != right.settings {
+        return Err(BenchmarkError::ComparisonMismatch("settings"));
     }
     Ok(())
 }
@@ -411,6 +418,7 @@ mod tests {
     fn metadata() -> RunMetadata {
         RunMetadata {
             schema_version: BENCHMARK_SCHEMA_VERSION.into(),
+            benchmark_version: "suite-1".into(),
             run_id: "run-1".into(),
             captured_at_utc: "2026-08-23T00:00:00Z".into(),
             git_commit: "0123456789abcdef".into(),
@@ -515,6 +523,13 @@ mod tests {
         assert_eq!(
             validate_comparison(&left, &right),
             Err(BenchmarkError::ComparisonMismatch("machine"))
+        );
+
+        let mut right = left.clone();
+        right.benchmark_version = "suite-2".into();
+        assert_eq!(
+            validate_comparison(&left, &right),
+            Err(BenchmarkError::ComparisonMismatch("benchmark_version"))
         );
     }
 
