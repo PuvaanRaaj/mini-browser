@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm ci --omit=dev --ignore-scripts --no-audit --no-fund",
+  "outputDirectory": "public"
+}

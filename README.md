@@ -80,6 +80,10 @@ You can also mount the disk image: `open release/Minimal-0.1.0-mac-arm64.dmg`.
 
 The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
 
+## Deploy the landing page to Vercel
+
+Vercel hosts the landing page, not the Electron desktop app. Import the repository with the root directory set to `./`, choose **Other**, and click **Deploy**. `vercel.json` runs the lightweight static build in `scripts/vercel-build.mjs` and skips development dependencies. The download button redirects to the newest `.dmg` attached to a GitHub Release; publish a release before offering downloads.
+
 ## Why this exists
 
 A full browser is cookies, extensions, and logged-in tabs. Minimal is the opposite:
