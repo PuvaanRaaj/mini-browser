@@ -211,7 +211,9 @@ export class MiniSession {
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
-        sandbox: true,
+        // WSL2 kernels reject the shared-memory calls Chromium's renderer sandbox
+        // needs, which crashes every tab. Keep the sandbox everywhere else.
+        sandbox: process.platform !== "linux",
         contextIsolation: true,
         nodeIntegration: false,
       },
@@ -396,6 +398,22 @@ export function routeBrowserShortcut(
   }
   if (cmd && input.shift && key === "f") {
     window.webContents.send("mini:toggle", "focus");
+    return true;
+  }
+  if (cmd && key === ",") {
+    window.webContents.send("mini:toggle", "settings");
+    return true;
+  }
+  if (cmd && key === "d") {
+    window.webContents.send("mini:toggle", "bookmark");
+    return true;
+  }
+  if (cmd && input.shift && key === "b") {
+    window.webContents.send("mini:toggle", "favorites");
+    return true;
+  }
+  if (cmd && input.shift && key === "s") {
+    window.webContents.send("mini:toggle", "sidebar");
     return true;
   }
   if (cmd && input.shift && key === "a") {

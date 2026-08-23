@@ -20,8 +20,8 @@ const mini = {
     ipcRenderer.on("mini:focus-url", listener);
     return () => ipcRenderer.removeListener("mini:focus-url", listener);
   },
-  onToggle: (callback: (what: "focus" | "authenticator") => void): (() => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, what: "focus" | "authenticator") =>
+  onToggle: (callback: (what: "focus" | "authenticator" | "sidebar" | "bookmark" | "favorites" | "settings") => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, what: "focus" | "authenticator" | "sidebar" | "bookmark" | "favorites" | "settings") =>
       callback(what);
     ipcRenderer.on("mini:toggle", listener);
     return () => ipcRenderer.removeListener("mini:toggle", listener);

@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { app, type Session } from "electron";
+import { app, net, type Session } from "electron";
 
 import {
   BLOCKED_HOST_SUFFIXES,
@@ -35,7 +35,10 @@ async function enrichFromEasyList(blocked: Set<string>): Promise<void> {
   try {
     const lists = await Promise.all(
       EASYLIST_SOURCES.map(async (url) => {
-        const response = await fetch(url);
+        // Chromium's stack, not Node's undici: undici asserts on its own
+        // internals when a large body's socket ends mid-parse, and that throws
+        // from a socket event where this try/catch cannot reach it.
+        const response = await net.fetch(url);
         if (!response.ok) throw new Error(response.statusText);
         return parseEasyListHosts(await response.text());
       }),

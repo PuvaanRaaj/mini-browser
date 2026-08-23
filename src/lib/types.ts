@@ -9,6 +9,23 @@ export type TabInfo = {
   error: string | null;
 };
 
+export type TabPosition = "top" | "side";
+
+export type FavoritesMode = "always" | "hover" | "never";
+
+export type MiniSettings = {
+  tabPosition: TabPosition;
+  favoritesMode: FavoritesMode;
+  restoreSession: boolean;
+};
+
+export type Bookmark = {
+  id: string;
+  url: string;
+  title: string;
+  createdAt: number;
+};
+
 export type BrowserState = {
   tabs: TabInfo[];
   activeTabId: string | null;

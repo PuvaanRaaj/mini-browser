@@ -7,19 +7,32 @@ const AuthenticatorPanel = lazy(() =>
   })),
 );
 import { CompactChrome } from "@/components/compact-chrome";
+import { FavoritesBar } from "@/components/favorites-bar";
+import { FavoritesPanel } from "@/components/favorites-panel";
 import { Omnibox } from "@/components/omnibox";
+import { SettingsPanel } from "@/components/settings-panel";
 import { StartPage } from "@/components/start-page";
+import { TabStrip } from "@/components/tab-strip";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useMiniBrowser } from "@/hooks/use-mini-browser";
+import { useBookmarks } from "@/lib/bookmarks";
+import { readSession, saveSession, useSettings } from "@/lib/settings";
 import type { BrowserCommand, LayoutRect } from "@/lib/types";
 
 export function MiniApp() {
   const { state, activeTab, send, isNative } = useMiniBrowser();
+  const [settings, setSetting] = useSettings();
   const [focusMode, setFocusMode] = useState(false);
   const [omniboxOpen, setOmniboxOpen] = useState(false);
   const [authenticatorOpen, setAuthenticatorOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [favoritesPanelOpen, setFavoritesPanelOpen] = useState(false);
+  const [toolbarHover, setToolbarHover] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const { bookmarks, remove, toggle, isSaved } = useBookmarks();
   const urlRef = useRef<HTMLInputElement | null>(null);
   const slotRef = useRef<HTMLDivElement | null>(null);
+  const restoredRef = useRef(false);
   const isMac = window.mini?.platform === "darwin";
 
   const dispatch = useCallback(
@@ -29,12 +42,25 @@ export function MiniApp() {
     [send],
   );
 
+  const anySheet = authenticatorOpen || settingsOpen || favoritesPanelOpen;
   const showStart = !activeTab || activeTab.isStartPage;
   const hasPageTabs = state.tabs.some((tab) => !tab.isStartPage);
   const showOmnibox = omniboxOpen && !showStart;
-  const pageVisible = !showStart && !showOmnibox && !authenticatorOpen;
-  const showChrome =
-    !focusMode && !showOmnibox && !authenticatorOpen && hasPageTabs;
+  const pageVisible = !showStart && !showOmnibox && !anySheet;
+  const showChrome = !focusMode && !showOmnibox && !anySheet && hasPageTabs;
+
+  const favoritesMode = settings.favoritesMode;
+  const hasFavorites = bookmarks.length > 0;
+  // "hover" keeps the bar mounted at zero height so it can slide open. Nothing
+  // may paint over a native page view, so revealing it reflows the page instead.
+  const showFavoritesBar = showChrome && hasFavorites && favoritesMode !== "never";
+  const favoritesPeek = favoritesMode === "always" || toolbarHover;
+  const activeSaved = activeTab ? isSaved(activeTab.url) : false;
+
+  const toggleBookmark = useCallback(() => {
+    if (!activeTab || activeTab.isStartPage) return;
+    toggle(activeTab.url, activeTab.title);
+  }, [activeTab, toggle]);
 
   const publishLayout = useCallback(() => {
     const node = slotRef.current;
@@ -61,7 +87,33 @@ export function MiniApp() {
       observer.disconnect();
       window.removeEventListener("resize", publishLayout);
     };
-  }, [publishLayout, showChrome]);
+  }, [publishLayout, showChrome, settings.tabPosition, showFavoritesBar, favoritesPeek]);
+
+  // Rebuild last session's tabs once, and only into an untouched window.
+  useEffect(() => {
+    if (restoredRef.current || state.status !== "ready") return;
+    restoredRef.current = true;
+
+    const fresh = state.tabs.length === 1 && state.tabs[0]?.isStartPage;
+    const urls = settings.restoreSession ? readSession() : [];
+    if (!fresh || urls.length === 0) {
+      setSessionReady(true);
+      return;
+    }
+
+    void (async () => {
+      for (const [index, url] of urls.entries()) {
+        if (index > 0) await send({ type: "newTab" });
+        await send({ type: "navigate", url });
+      }
+      setSessionReady(true);
+    })();
+  }, [state.status, state.tabs, settings.restoreSession, send]);
+
+  useEffect(() => {
+    if (!sessionReady || !settings.restoreSession) return;
+    saveSession(state.tabs.filter((tab) => !tab.isStartPage).map((tab) => tab.url));
+  }, [sessionReady, settings.restoreSession, state.tabs]);
 
   useEffect(() => {
     if (showStart && showChrome) urlRef.current?.focus();
@@ -70,8 +122,13 @@ export function MiniApp() {
   useEffect(() => {
     const api = window.mini;
     if (!api) return;
-    const stopFocus = api.onFocusUrl(() => {
+    const closeSheets = () => {
       setAuthenticatorOpen(false);
+      setSettingsOpen(false);
+      setFavoritesPanelOpen(false);
+    };
+    const stopFocus = api.onFocusUrl(() => {
+      closeSheets();
       if (showStart) return;
       if (focusMode) {
         setOmniboxOpen(true);
@@ -83,26 +140,52 @@ export function MiniApp() {
     const stopToggle = api.onToggle((what) => {
       if (what === "focus") {
         setOmniboxOpen(false);
-        setAuthenticatorOpen(false);
+        closeSheets();
         setFocusMode((value) => !value);
       }
       if (what === "authenticator") {
         setOmniboxOpen(false);
+        setSettingsOpen(false);
+        setFavoritesPanelOpen(false);
         setAuthenticatorOpen((value) => !value);
+      }
+      if (what === "settings") {
+        setOmniboxOpen(false);
+        setAuthenticatorOpen(false);
+        setFavoritesPanelOpen(false);
+        setSettingsOpen((value) => !value);
+      }
+      if (what === "sidebar") {
+        setSetting("tabPosition", settings.tabPosition === "side" ? "top" : "side");
+      }
+      if (what === "bookmark") {
+        toggleBookmark();
+      }
+      if (what === "favorites") {
+        if (favoritesMode === "never") {
+          setOmniboxOpen(false);
+          setAuthenticatorOpen(false);
+          setSettingsOpen(false);
+          setFavoritesPanelOpen((value) => !value);
+        } else {
+          setSetting("favoritesMode", favoritesMode === "always" ? "hover" : "always");
+        }
       }
     });
     return () => {
       stopFocus();
       stopToggle();
     };
-  }, [showStart, focusMode]);
+  }, [showStart, focusMode, toggleBookmark, favoritesMode, settings.tabPosition, setSetting]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (authenticatorOpen) {
+        if (anySheet) {
           event.preventDefault();
           setAuthenticatorOpen(false);
+          setSettingsOpen(false);
+          setFavoritesPanelOpen(false);
           return;
         }
         if (omniboxOpen && !showStart) {
@@ -127,6 +210,23 @@ export function MiniApp() {
         setAuthenticatorOpen(false);
         setFocusMode((value) => !value);
       }
+      if (mod && key === ",") {
+        event.preventDefault();
+        setSettingsOpen((value) => !value);
+      }
+      if (mod && key === "d") {
+        event.preventDefault();
+        toggleBookmark();
+      }
+      if (mod && event.shiftKey && key === "b") {
+        event.preventDefault();
+        if (favoritesMode === "never") setFavoritesPanelOpen((value) => !value);
+        else setSetting("favoritesMode", favoritesMode === "always" ? "hover" : "always");
+      }
+      if (mod && event.shiftKey && key === "s") {
+        event.preventDefault();
+        setSetting("tabPosition", settings.tabPosition === "side" ? "top" : "side");
+      }
       if (mod && key === "l" && !showStart) {
         event.preventDefault();
         setAuthenticatorOpen(false);
@@ -139,10 +239,20 @@ export function MiniApp() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [authenticatorOpen, omniboxOpen, showStart, focusMode]);
+  }, [
+    anySheet,
+    omniboxOpen,
+    showStart,
+    focusMode,
+    toggleBookmark,
+    favoritesMode,
+    settings.tabPosition,
+    setSetting,
+  ]);
 
   const navigate = (url: string) => {
     setOmniboxOpen(false);
+    setFavoritesPanelOpen(false);
     dispatch({ type: "navigate", url });
   };
 
@@ -150,61 +260,122 @@ export function MiniApp() {
     <TooltipProvider delay={250}>
       <div className="mini-root" data-agent="browser-shell">
         {showChrome ? (
-          <CompactChrome
-            tabs={state.tabs}
-            activeTab={activeTab}
-            urlRef={urlRef}
-            isMac={isMac}
-            adblockEnabled={state.adblockEnabled}
-            authenticatorOpen={authenticatorOpen}
-            onSelect={(id) => dispatch({ type: "switchTab", id })}
-            onClose={(id) => dispatch({ type: "closeTab", id })}
-            onNew={() => dispatch({ type: "newTab" })}
-            onNavigate={navigate}
-            onAuthenticator={() => setAuthenticatorOpen((value) => !value)}
-          />
+          <div
+            className="mini-top"
+            onMouseEnter={() => setToolbarHover(true)}
+            onMouseLeave={() => setToolbarHover(false)}
+          >
+            <CompactChrome
+              tabs={state.tabs}
+              activeTab={activeTab}
+              urlRef={urlRef}
+              isMac={isMac}
+              adblockEnabled={state.adblockEnabled}
+              authenticatorOpen={authenticatorOpen}
+              tabPosition={settings.tabPosition}
+              bookmarked={activeSaved}
+              favoritesMode={favoritesMode}
+              onSelect={(id) => dispatch({ type: "switchTab", id })}
+              onClose={(id) => dispatch({ type: "closeTab", id })}
+              onNew={() => dispatch({ type: "newTab" })}
+              onNavigate={navigate}
+              onAuthenticator={() => setAuthenticatorOpen((value) => !value)}
+              onTabPosition={() =>
+                setSetting("tabPosition", settings.tabPosition === "side" ? "top" : "side")
+              }
+              onBookmark={toggleBookmark}
+              onFavorites={() => setFavoritesPanelOpen((value) => !value)}
+              onSettings={() => setSettingsOpen((value) => !value)}
+            />
+
+            {showFavoritesBar ? (
+              <FavoritesBar
+                bookmarks={bookmarks}
+                hoverMode={favoritesMode === "hover"}
+                revealed={favoritesPeek}
+                onOpen={navigate}
+                onRemove={remove}
+              />
+            ) : null}
+          </div>
         ) : null}
 
-        <div ref={slotRef} className="mini-slot">
-          {showStart && !showChrome ? (
-            <StartPage
-              onNavigate={navigate}
-              onAuthenticator={() => setAuthenticatorOpen(true)}
-            />
+        <div className="mini-body">
+          {showChrome && settings.tabPosition === "side" ? (
+            <aside className="mini-sidebar">
+              <TabStrip
+                tabs={state.tabs}
+                activeTab={activeTab}
+                position="side"
+                onSelect={(id) => dispatch({ type: "switchTab", id })}
+                onClose={(id) => dispatch({ type: "closeTab", id })}
+                onNew={() => dispatch({ type: "newTab" })}
+              />
+            </aside>
           ) : null}
 
-          {showOmnibox ? (
-            <div className="mini-overlay">
-              <Omnibox defaultValue={activeTab?.url ?? ""} onSubmit={navigate} />
-            </div>
-          ) : null}
+          <div ref={slotRef} className="mini-slot">
+            {showStart && !showChrome ? (
+              <StartPage
+                bookmarks={bookmarks}
+                onNavigate={navigate}
+                onAuthenticator={() => setAuthenticatorOpen(true)}
+                onSettings={() => setSettingsOpen(true)}
+              />
+            ) : null}
 
-          {!isNative && pageVisible && activeTab?.url ? (
-            <iframe
-              className="mini-preview-frame"
-              src={activeTab.url}
-              title={activeTab.title}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            />
-          ) : null}
+            {showOmnibox ? (
+              <div className="mini-overlay">
+                <Omnibox defaultValue={activeTab?.url ?? ""} onSubmit={navigate} />
+              </div>
+            ) : null}
 
-          {!showStart && !showOmnibox && activeTab?.error ? (
-            <NavigationError
-              message={activeTab.error}
-              url={activeTab.url}
-              canGoBack={activeTab.canGoBack}
-              onRetry={() => activeTab.url && navigate(activeTab.url)}
-              onBack={() => dispatch({ type: "back" })}
-            />
-          ) : null}
+            {!isNative && pageVisible && activeTab?.url ? (
+              <iframe
+                className="mini-preview-frame"
+                src={activeTab.url}
+                title={activeTab.title}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            ) : null}
 
-          {authenticatorOpen ? (
-            <div className="mini-sheet-backdrop">
-              <Suspense fallback={<div className="mini-sheet-loading">Loading authenticator…</div>}>
-                <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
-              </Suspense>
-            </div>
-          ) : null}
+            {!showStart && !showOmnibox && activeTab?.error ? (
+              <NavigationError
+                message={activeTab.error}
+                url={activeTab.url}
+                canGoBack={activeTab.canGoBack}
+                onRetry={() => activeTab.url && navigate(activeTab.url)}
+                onBack={() => dispatch({ type: "back" })}
+              />
+            ) : null}
+
+            {anySheet ? (
+              <div className="mini-sheet-backdrop">
+                {authenticatorOpen ? (
+                  <Suspense
+                    fallback={<div className="mini-sheet-loading">Loading authenticator…</div>}
+                  >
+                    <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+                  </Suspense>
+                ) : null}
+                {settingsOpen ? (
+                  <SettingsPanel
+                    settings={settings}
+                    onChange={setSetting}
+                    onClose={() => setSettingsOpen(false)}
+                  />
+                ) : null}
+                {favoritesPanelOpen ? (
+                  <FavoritesPanel
+                    bookmarks={bookmarks}
+                    onOpen={navigate}
+                    onRemove={remove}
+                    onClose={() => setFavoritesPanelOpen(false)}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </TooltipProvider>

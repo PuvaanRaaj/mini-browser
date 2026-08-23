@@ -158,6 +158,176 @@ body,
   background: #ffffff;
 }
 
+.mini-top {
+  z-index: 20;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.mini-favorites {
+  z-index: 20;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0 10px 6px;
+  background: #ffffff;
+  scrollbar-width: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-favorites::-webkit-scrollbar {
+  display: none;
+}
+
+/* Declared after .mini-favorites so these win at equal specificity. */
+.mini-favorites.mini-favorites-hover {
+  height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition:
+    height 130ms ease,
+    padding-bottom 130ms ease;
+}
+
+.mini-favorites.mini-favorites-hover.mini-favorites-peek {
+  height: 32px;
+  padding-bottom: 6px;
+}
+
+.mini-fav {
+  display: flex;
+  max-width: 200px;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 7px;
+  color: #5c5c62;
+}
+
+.mini-fav:hover {
+  background: #f3f3f5;
+}
+
+.mini-fav-label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px 0 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mini-fav-badge {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: #ececef;
+  color: #6b6b73;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.mini-fav-title {
+  overflow: hidden;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-fav-remove {
+  display: flex;
+  width: 0;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.mini-fav:hover .mini-fav-remove {
+  width: 18px;
+  margin-right: 4px;
+}
+
+.mini-fav-remove:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #3f3f46;
+}
+
+.mini-fav-remove svg {
+  width: 10px;
+  height: 10px;
+}
+
+.mini-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.mini-sidebar {
+  box-sizing: border-box;
+  z-index: 20;
+  display: flex;
+  width: 188px;
+  flex-shrink: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+  background: #ffffff;
+}
+
+.mini-tabs-side {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.mini-tab-side {
+  max-width: none;
+  width: 100%;
+}
+
+.mini-tab-side.mini-tab {
+  background: transparent;
+}
+
+.mini-tab-side:hover {
+  background: #f7f7f8;
+}
+
+.mini-tab-side.mini-tab-active {
+  background: #f3f3f5;
+}
+
+.mini-new-tab-side {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 12px;
+}
+
 .mini-slot {
   position: relative;
   flex: 1;
@@ -177,6 +347,127 @@ body,
   background: #ffffff;
   -webkit-app-region: drag;
   app-region: drag;
+}
+
+.mini-start-inner {
+  display: flex;
+  width: min(560px, 100%);
+  flex-direction: column;
+  align-items: center;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-start-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.mini-start-ring {
+  box-sizing: border-box;
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid #111111;
+  border-radius: 50%;
+}
+
+.mini-start-word {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.mini-start-greeting {
+  margin: 10px 0 22px;
+  color: #a1a1aa;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.mini-start-tiles {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.mini-start-tile {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.mini-start-tile:hover {
+  background: #f7f7f8;
+}
+
+.mini-start-tile-badge {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f1f1f3;
+  color: #52525b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mini-start-tile-title {
+  max-width: 100%;
+  overflow: hidden;
+  color: #71717a;
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-start-empty {
+  margin: 26px 0 0;
+  color: #c4c4c8;
+  font-size: 12px;
+}
+
+.mini-start-hints {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 34px;
+  color: #c4c4c8;
+  font-size: 11px;
+}
+
+.mini-start-hints kbd {
+  color: #a1a1aa;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.mini-start-corner {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+}
+
+.mini-start-corner .mini-corner-ext {
+  position: static;
 }
 
 .mini-omnibox-form {
