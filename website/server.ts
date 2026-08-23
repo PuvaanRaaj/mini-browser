@@ -2,7 +2,7 @@
 /**
  * Minimal — landing page server. Run with Bun:
  *
- *   bun website/server.ts        (or: npm run site)
+ *   npm run site
  *
  * Zero dependencies. Detects the visitor's OS from the User-Agent,
  * serves the landing page with the right platform preselected, and

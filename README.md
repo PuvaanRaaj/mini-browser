@@ -2,12 +2,12 @@
 
 A personal Chromium browser for macOS. White window, almost no chrome: one search field on a new tab, then a slim title pill and URL bar over the page. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
 
-Inspired by [Guillermo Rauch’s Mini](https://x.com/rauchg/status/2091229263701905662) (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
+This one is a real Mac app — Chromium in a native window.
 
 **Public (anyone):** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)  
 **Cursor / Origin:** [puvaanraaj/mini-browser](https://origin.cursor.com/puvaanraaj/mini-browser)
 
-License: [Apache-2.0](LICENSE). Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Clone
 
@@ -61,10 +61,10 @@ From the repo root: `open release/mac-arm64/Minimal.app`
 
 ## Landing page
 
-`website/` holds a zero-dependency landing page served by [Bun](https://bun.sh):
+`website/` holds the landing page. Run it locally with:
 
 ```bash
-npm run site        # → http://localhost:3000   (bun website/server.ts)
+npm run site        # → http://localhost:3000
 ```
 
 - Detects the visitor's OS from the User-Agent (server-side, refined client-side) and preselects macOS / Windows / Linux.
@@ -83,6 +83,10 @@ The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build 
 ## Deploy the landing page to Vercel
 
 Vercel hosts the landing page, not the Electron desktop app. Import the repository with the root directory set to `./`, choose **Other**, and click **Deploy**. `vercel.json` runs the lightweight static build in `scripts/vercel-build.mjs` and skips development dependencies. The download button redirects to the newest `.dmg` attached to a GitHub Release; publish a release before offering downloads.
+
+## Roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the performance, release, and automatic-update plan.
 
 ## Why this exists
 
