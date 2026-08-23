@@ -31,11 +31,11 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: process.platform !== "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
-    trafficLightPosition: { x: 16, y: 18 },
+    trafficLightPosition: { x: 16, y: 14 },
     titleBarOverlay:
       process.platform === "darwin"
         ? undefined
-        : { color: "#ffffff", symbolColor: "#111111", height: 36 },
+        : { color: "#ffffff", symbolColor: "#111111", height: 44 },
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,

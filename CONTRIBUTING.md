@@ -30,7 +30,7 @@ npm run dist:mac
 | `src/main/` | Electron main process, menus, tab Chromium views |
 | `src/preload/` | IPC bridge (`window.mini`) |
 | `src/renderer/` | Window chrome (React) |
-| `src/components/` | Toolbar, tabs, start page, authenticator |
+| `src/components/` | Compact chrome, start page, authenticator |
 | `src/lib/totp.ts` | TOTP generation |
 | `extension/` | Manifest V3 authenticator, loaded into the guest session |
 

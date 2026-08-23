@@ -1,6 +1,6 @@
 # Mini
 
-A personal Chromium browser for macOS. White window, almost no chrome: one search field, then the page fills the frame. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
+A personal Chromium browser for macOS. White window, almost no chrome: one search field on a new tab, then a slim title pill and URL bar over the page. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
 
 Inspired by [Guillermo Rauch’s Mini](https://x.com/rauchg/status/2091229263701905662) (built with [fx](https://fx.sh)). This one is a real Mac app — Chromium in a native window.
 
@@ -68,22 +68,22 @@ The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build 
 
 A full browser is cookies, extensions, and logged-in tabs. Mini is the opposite:
 
-- **Chromeless by default** — a white window with one search field. After you go somewhere, the page is the whole window, like a native document.
+- **New tab** is a white canvas with one search field. After you go somewhere, a slim bar shows the page title and URL — no back/forward buttons, no extra toolbar.
 - **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
-- **Focus mode** (`⌘⇧F`) is on from launch. Toggle it to show tabs and the toolbar when you need them.
+- **Focus mode** (`⌘⇧F`) hides that bar so the page fills the window, Orion-style.
 - **Authenticator** (`⌘⇧A`) so you can still 2FA without your daily browser
 
-`⌘L` brings back the same centered search field over the current page. Escape dismisses it.
+`⌘L` focuses the URL field. In focus mode it brings back the centered search field. Escape dismisses it.
 
 ## Keyboard
 
 | Shortcut | Action |
 | --- | --- |
-| `⌘L` | Open the search field |
+| `⌘L` | Focus the URL field |
 | `⌘T` | New tab |
 | `⌘W` | Close tab |
 | `⌘R` | Reload |
-| `⌘⇧F` | Toggle tabs and toolbar |
+| `⌘⇧F` | Focus mode (hide the title/URL bar) |
 | `⌘⇧A` | Authenticator |
 | `⌘[ / ⌘]` | Back / forward |
 | `Esc` | Close search or authenticator |
