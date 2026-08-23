@@ -1,9 +1,14 @@
 {
-  "name": "mini",
+  "name": "mini-browser",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "license": "Apache-2.0",
   "description": "A personal Chromium browser for macOS, with focus mode and a built-in TOTP authenticator.",
-  "author": "Mini",
+  "author": "Mini contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://origin.cursor.com/puvaanraaj/tmp-fb57f3438b1f4856.git"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
