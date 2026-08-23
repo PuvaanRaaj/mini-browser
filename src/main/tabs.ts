@@ -10,6 +10,7 @@ import {
   type Session,
 } from "electron";
 
+import { enableAdblock } from "./adblock";
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
 import { resolveNavigation } from "../lib/url";
 
@@ -30,6 +31,7 @@ export class MiniSession {
   private sessionId = randomUUID();
   private guest: Session | null = null;
   private extensionLoaded = false;
+  private adblockEnabled = false;
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
@@ -47,6 +49,7 @@ export class MiniSession {
       status: "ready",
       error: null,
       extensionLoaded: this.extensionLoaded,
+      adblockEnabled: this.adblockEnabled,
     };
   }
 
@@ -109,6 +112,7 @@ export class MiniSession {
     this.guest = electronSession.fromPartition(`mini-${this.sessionId}`);
     this.guest.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     this.guest.setUserAgent(this.guest.getUserAgent().replace(/Electron\/\S+\s/g, ""));
+    this.adblockEnabled = await enableAdblock(this.guest);
     this.extensionLoaded = await loadAuthenticatorExtension(this.guest);
     return this.guest;
   }
@@ -241,6 +245,7 @@ export class MiniSession {
     this.order = [];
     this.guest = null;
     this.extensionLoaded = false;
+    this.adblockEnabled = false;
     this.sessionId = randomUUID();
     this.createStartTab(true);
   }

@@ -150,14 +150,23 @@ export function MiniApp() {
             activeTab={activeTab}
             urlRef={urlRef}
             isMac={isMac}
+            adblockEnabled={state.adblockEnabled}
+            authenticatorOpen={authenticatorOpen}
             onSelect={(id) => dispatch({ type: "switchTab", id })}
             onClose={(id) => dispatch({ type: "closeTab", id })}
+            onNew={() => dispatch({ type: "newTab" })}
             onNavigate={navigate}
+            onAuthenticator={() => setAuthenticatorOpen((value) => !value)}
           />
         ) : null}
 
         <div ref={slotRef} className="mini-slot">
-          {showStart && !showChrome ? <StartPage onNavigate={navigate} /> : null}
+          {showStart && !showChrome ? (
+            <StartPage
+              onNavigate={navigate}
+              onAuthenticator={() => setAuthenticatorOpen(true)}
+            />
+          ) : null}
 
           {showOmnibox ? (
             <div className="mini-overlay">

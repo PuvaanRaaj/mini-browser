@@ -28,6 +28,7 @@ function previewSeed(): BrowserState {
       status: "ready",
       error: null,
       extensionLoaded: false,
+      adblockEnabled: true,
     };
   }
   return {
@@ -44,6 +45,7 @@ function previewSeed(): BrowserState {
     status: "ready",
     error: null,
     extensionLoaded: false,
+    adblockEnabled: true,
   };
 }
 

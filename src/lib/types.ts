@@ -16,6 +16,7 @@ export type BrowserState = {
   status: "ready" | "error";
   error: string | null;
   extensionLoaded: boolean;
+  adblockEnabled: boolean;
 };
 
 export type BrowserCommand =

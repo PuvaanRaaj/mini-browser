@@ -169,6 +169,7 @@ body,
 
 .mini-start,
 .mini-overlay {
+  position: relative;
   display: flex;
   height: 100%;
   align-items: center;
@@ -258,7 +259,70 @@ body,
   app-region: drag;
 }
 
-.no-drag {
+.mini-icon-btn {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #5c5c62;
+  cursor: pointer;
+}
+
+.mini-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mini-icon-btn:hover {
+  background: #f3f3f5;
+  color: #111111;
+}
+
+.mini-icon-btn-active {
+  background: #f3f3f5;
+  color: #111111;
+}
+
+.mini-ext-tray {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
   -webkit-app-region: no-drag;
   app-region: no-drag;
+}
+
+.mini-corner-ext {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: #5c5c62;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.mini-corner-ext svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mini-corner-ext:hover {
+  color: #111111;
 }

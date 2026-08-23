@@ -1,6 +1,7 @@
-import { XIcon } from "lucide-react";
+import { KeyRoundIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
 import { useState, type RefObject } from "react";
 
+import { modLabel } from "@/lib/mod";
 import type { TabInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -9,22 +10,31 @@ export function CompactChrome({
   activeTab,
   urlRef,
   isMac,
+  adblockEnabled,
+  authenticatorOpen,
   onSelect,
   onClose,
+  onNew,
   onNavigate,
+  onAuthenticator,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
   urlRef: RefObject<HTMLInputElement | null>;
   isMac: boolean;
+  adblockEnabled: boolean;
+  authenticatorOpen: boolean;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
+  onNew: () => void;
   onNavigate: (value: string) => void;
+  onAuthenticator: () => void;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
   const shown = focused ? draft : (activeTab?.isStartPage ? "" : (activeTab?.url ?? ""));
   const visibleTabs = tabs.filter((tab) => !tab.isStartPage || tabs.length > 1);
+  const mod = modLabel();
 
   return (
     <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
@@ -61,6 +71,15 @@ export function CompactChrome({
             </div>
           );
         })}
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onNew}
+          title={`New tab (${mod}+T)`}
+          aria-label="New tab"
+        >
+          <PlusIcon />
+        </button>
       </div>
 
       <form
@@ -89,6 +108,26 @@ export function CompactChrome({
           autoComplete="off"
         />
       </form>
+
+      <div className="mini-ext-tray">
+        <button
+          type="button"
+          className="mini-icon-btn"
+          title={adblockEnabled ? "Blocking ads and trackers" : "Ad blocker starting…"}
+          aria-label="Ad blocker"
+        >
+          <ShieldCheckIcon />
+        </button>
+        <button
+          type="button"
+          className={cn("mini-icon-btn", authenticatorOpen && "mini-icon-btn-active")}
+          onClick={onAuthenticator}
+          title={`Authenticator (${mod}+Shift+A)`}
+          aria-label="Authenticator"
+        >
+          <KeyRoundIcon />
+        </button>
+      </div>
     </header>
   );
 }

@@ -68,10 +68,10 @@ The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build 
 
 A full browser is cookies, extensions, and logged-in tabs. Minimal is the opposite:
 
-- **New tab** is a white canvas with one search field. After you go somewhere, a slim bar shows the page title and URL — no back/forward buttons, no extra toolbar.
+- **New tab** — `⌘T`, **File → New Tab**, or the **+** next to the tab pill
 - **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
-- **Focus mode** (`⌘⇧F`) hides that bar so the page fills the window, Orion-style.
-- **Authenticator** (`⌘⇧A`) so you can still 2FA without your daily browser
+- **Ads and trackers blocked** on every session (EasyList + EasyPrivacy, plus a built-in host list)
+- **Authenticator** — key icon to the right of the URL bar (like a Chrome toolbar extension), or `⌘⇧A`. Codes stay in Minimal, not in the throwaway profile.
 
 `⌘L` focuses the URL field. In focus mode it brings back the centered search field. Escape dismisses it.
 
@@ -92,11 +92,19 @@ Search queries go to DuckDuckGo. Hostnames open as `https://`.
 
 ## Authenticator
 
-The authenticator panel is the daily driver: paste an `otpauth://` URI or a base32 secret, click a code to copy it.
+There is no Chrome Web Store here. 2FA is built in:
 
-Secrets live in Minimal's own renderer storage. They survive **Reset Session**, which only throws away the throwaway Chromium profile.
+- **Key icon** to the right of the URL bar (same place Chrome puts extension icons)
+- On a new tab, the same key sits in the bottom-right corner
+- **⌘⇧A**, or **View → Authenticator**
 
-The same authenticator ships as a Manifest V3 extension in `extension/`. Minimal loads it into the guest session; you can also Load unpacked in Chrome.
+Paste an `otpauth://` URI or a base32 secret, click a code to copy it. Secrets live in Minimal's renderer storage and survive **Reset Session**.
+
+The same authenticator also ships as a Manifest V3 extension in `extension/`, loaded into the guest Chromium session. Electron does not draw Chrome's puzzle-piece toolbar, so the key icon is the control.
+
+## Ad blocking
+
+Ads and trackers are blocked by default in the throwaway session. A built-in host list applies immediately; EasyList and EasyPrivacy are fetched in the background and cached. The shield next to the URL bar means blocking is on. There is no off switch yet.
 
 ## Stack
 

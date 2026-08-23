@@ -17,7 +17,7 @@
     "dist:mac": "electron-vite build && electron-builder --mac",
     "open:mac": "node scripts/open-mac.mjs",
     "start": "electron-vite preview",
-    "test": "npx tsx src/lib/totp.test.ts",
+    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts",
     "lint": "eslint src"
   },
   "dependencies": {
