@@ -21,7 +21,7 @@ npx tsc --noEmit
 npm run dist:mac
 ```
 
-`npm run dist:mac` writes `release/mac/Mini.app`. The first launch of an unsigned build may need System Settings → Privacy & Security.
+`npm run dist:mac` writes `release/mac-arm64/Mini.app` on Apple Silicon (or `release/mac/Mini.app` on Intel). Open it with `npm run open:mac`. The first launch of an unsigned build may need System Settings → Privacy & Security.
 
 ## Layout
 

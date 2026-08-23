@@ -15,6 +15,7 @@
     "build": "electron-vite build",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
+    "open:mac": "node scripts/open-mac.mjs",
     "start": "electron-vite preview",
     "test": "npx tsx src/lib/totp.test.ts",
     "lint": "eslint src"

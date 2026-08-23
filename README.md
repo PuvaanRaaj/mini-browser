@@ -29,12 +29,15 @@ npm install
 npm run dev
 ```
 
-Build `Mini.app`:
+Build `Mini.app` (Apple Silicon lands in `mac-arm64/`):
 
 ```bash
 npm run dist:mac
-open release/mac/Mini.app
+npm run open:mac
+# or: open release/mac-arm64/Mini.app
 ```
+
+You can also mount the disk image: `open release/Mini-0.1.0-mac-arm64.dmg`.
 
 The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
 
