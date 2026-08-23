@@ -6,8 +6,8 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -23,8 +23,8 @@ body,
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
 }
 
 .mini-chrome {
@@ -35,7 +35,7 @@ body,
   gap: 8px;
   height: 44px;
   padding: 0 12px 0 10px;
-  background: #ffffff;
+  background: #0a0a0b;
   -webkit-app-region: drag;
   app-region: drag;
 }
@@ -63,8 +63,8 @@ body,
   align-items: center;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f3f3f5;
-  color: #5c5c62;
+  background: #17171b;
+  color: #a1a1aa;
 }
 
 .mini-tab:has(.mini-tab-close) {
@@ -72,7 +72,8 @@ body,
 }
 
 .mini-tab-active {
-  color: #3f3f46;
+  background: #232327;
+  color: #fafafa;
 }
 
 .mini-tab-label {
@@ -114,8 +115,8 @@ body,
 }
 
 .mini-tab-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
 }
 
 .mini-tab-close svg {
@@ -133,13 +134,13 @@ body,
 }
 
 .mini-icon-btn:disabled {
-  color: #d4d4d8;
+  color: #3f3f46;
   cursor: default;
 }
 
 .mini-icon-btn:disabled:hover {
   background: transparent;
-  color: #d4d4d8;
+  color: #3f3f46;
 }
 
 .mini-url-form {
@@ -157,15 +158,16 @@ body,
   padding: 0 12px;
   border: 0;
   border-radius: 8px;
-  background: #f3f3f5;
-  color: #52525b;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #fafafa;
   font-size: 13px;
   letter-spacing: -0.01em;
   outline: none;
 }
 
 .mini-url::placeholder {
-  color: #c4c4c8;
+  color: #7c7c85;
 }
 
 .mini-preview-frame {
@@ -182,7 +184,7 @@ body,
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  background: #ffffff;
+  background: #0a0a0b;
 }
 
 .mini-favorites {
@@ -193,7 +195,7 @@ body,
   gap: 2px;
   overflow-x: auto;
   padding: 0 10px 6px;
-  background: #ffffff;
+  background: #0a0a0b;
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -226,11 +228,11 @@ body,
   flex-shrink: 0;
   align-items: center;
   border-radius: 7px;
-  color: #5c5c62;
+  color: #a1a1aa;
 }
 
 .mini-fav:hover {
-  background: #f3f3f5;
+  background: #17171b;
 }
 
 .mini-fav-label {
@@ -254,8 +256,8 @@ body,
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  background: #ececef;
-  color: #6b6b73;
+  background: #232327;
+  color: #a1a1aa;
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -290,8 +292,8 @@ body,
 }
 
 .mini-fav-remove:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
 }
 
 .mini-fav-remove svg {
@@ -315,7 +317,7 @@ body,
   flex-direction: column;
   overflow-y: auto;
   padding: 4px 8px 8px;
-  background: #ffffff;
+  background: #0a0a0b;
 }
 
 .mini-tabs-side {
@@ -334,11 +336,11 @@ body,
 }
 
 .mini-tab-side:hover {
-  background: #f7f7f8;
+  background: #17171b;
 }
 
 .mini-tab-side.mini-tab-active {
-  background: #f3f3f5;
+  background: #232327;
 }
 
 .mini-new-tab-side {
@@ -352,7 +354,7 @@ body,
   flex: 1;
   min-height: 0;
   min-width: 0;
-  background: #ffffff;
+  background: #0a0a0b;
 }
 
 .mini-start,
@@ -363,7 +365,7 @@ body,
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #ffffff;
+  background: #0a0a0b;
   -webkit-app-region: drag;
   app-region: drag;
 }
@@ -602,18 +604,19 @@ body,
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  background: #ffffff;
+  border: 1px solid #232327;
+  background: #121214;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 10px 32px rgba(0, 0, 0, 0.1);
-  color: #111111;
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 40px rgba(0, 0, 0, 0.5);
+  color: #fafafa;
   font-size: 16px;
   letter-spacing: -0.01em;
   outline: none;
 }
 
 .mini-omnibox::placeholder {
-  color: #c4c4c8;
+  color: #7c7c85;
 }
 
 .mini-omnibox:focus {
@@ -632,8 +635,8 @@ body,
   justify-content: center;
   gap: 10px;
   padding: 32px;
-  background: #ffffff;
-  color: #111111;
+  background: #0a0a0b;
+  color: #fafafa;
   text-align: center;
 }
 
@@ -643,8 +646,8 @@ body,
   height: 36px;
   place-items: center;
   border-radius: 50%;
-  background: #fff1f1;
-  color: #b42318;
+  background: #2a1416;
+  color: #fca5a5;
   font-size: 22px;
   font-weight: 650;
 }
@@ -686,27 +689,27 @@ body,
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #e4e4e7;
+  border: 1px solid #232327;
   border-radius: 9px;
-  background: #ffffff;
-  color: #3f3f46;
+  background: #121214;
+  color: #d4d4d8;
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
 .mini-error-action:hover {
-  background: #f4f4f5;
+  background: #1b1b1f;
 }
 
 .mini-error-action-primary {
-  border-color: #18181b;
-  background: #18181b;
-  color: #ffffff;
+  border-color: #fafafa;
+  background: #fafafa;
+  color: #0a0a0b;
 }
 
 .mini-error-action-primary:hover {
-  background: #3f3f46;
+  background: #d4d4d8;
 }
 
 .mini-error-action svg {
@@ -722,7 +725,7 @@ body,
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(10, 10, 11, 0.78);
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
@@ -733,10 +736,11 @@ body,
   min-height: 180px;
   place-items: center;
   border-radius: 18px;
-  background: #ffffff;
-  color: #71717a;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
   font-size: 13px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 .mini-sheet {
@@ -746,10 +750,11 @@ body,
   flex-direction: column;
   overflow: hidden;
   border-radius: 18px;
-  background: #ffffff;
+  border: 1px solid #232327;
+  background: #121214;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 24px 64px rgba(0, 0, 0, 0.16);
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 .drag-region {
@@ -768,7 +773,7 @@ body,
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #5c5c62;
+  color: #a1a1aa;
   cursor: pointer;
 }
 
@@ -778,13 +783,13 @@ body,
 }
 
 .mini-icon-btn:hover {
-  background: #f3f3f5;
-  color: #111111;
+  background: #1b1b1f;
+  color: #fafafa;
 }
 
 .mini-icon-btn-active {
-  background: #f3f3f5;
-  color: #111111;
+  background: #232327;
+  color: #fafafa;
 }
 
 .mini-ext-tray {
@@ -808,9 +813,9 @@ body,
   justify-content: center;
   border: 0;
   border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  color: #5c5c62;
+  border: 1px solid #232327;
+  background: #121214;
+  color: #a1a1aa;
   cursor: pointer;
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -822,5 +827,6 @@ body,
 }
 
 .mini-corner-ext:hover {
-  color: #111111;
+  background: #1b1b1f;
+  color: #fafafa;
 }

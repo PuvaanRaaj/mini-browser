@@ -98,13 +98,14 @@ app.whenReady().then(() => {
     mini?.applyLayout(rect);
   });
   ipcMain.on("mini:chrome-theme", (_event, theme: "light" | "dark") => {
-    // The start page is near-black; a white caption strip over it looks broken.
+    // Both surfaces are dark now, but keep the hook so a light theme can
+    // repaint the caption strip without new plumbing.
     if (process.platform === "darwin") return;
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.setTitleBarOverlay(
-      theme === "dark"
-        ? { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 }
-        : { color: "#ffffff", symbolColor: "#111111", height: 44 },
+      theme === "light"
+        ? { color: "#ffffff", symbolColor: "#111111", height: 44 }
+        : { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 },
     );
   });
 
