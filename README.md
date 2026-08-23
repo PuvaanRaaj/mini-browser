@@ -55,8 +55,10 @@ Build `Mini.app` (Apple Silicon lands in `mac-arm64/`):
 ```bash
 npm run dist:mac
 npm run open:mac
-# or: open release/mac-arm64/Mini.app
 ```
+
+From the repo root: `open release/mac-arm64/Mini.app`  
+If you already `cd`'d into `release/`: `open mac-arm64/Mini.app`
 
 You can also mount the disk image: `open release/Mini-0.1.0-mac-arm64.dmg`.
 
