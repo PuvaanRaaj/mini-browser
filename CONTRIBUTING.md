@@ -1,4 +1,4 @@
-# Contributing to Mini
+# Contributing to Minimal
 
 Thanks for helping with a small, hackable Chromium browser.
 
@@ -21,7 +21,7 @@ npx tsc --noEmit
 npm run dist:mac
 ```
 
-`npm run dist:mac` writes `release/mac-arm64/Mini.app` on Apple Silicon (or `release/mac/Mini.app` on Intel). Open it with `npm run open:mac`. The first launch of an unsigned build may need System Settings → Privacy & Security.
+`npm run dist:mac` writes `release/mac-arm64/Minimal.app` on Apple Silicon (or `release/mac/Minimal.app` on Intel). Open it with `npm run open:mac`. The first launch of an unsigned build may need System Settings → Privacy & Security.
 
 ## Layout
 
@@ -34,7 +34,7 @@ npm run dist:mac
 | `src/lib/totp.ts` | TOTP generation |
 | `extension/` | Manifest V3 authenticator, loaded into the guest session |
 
-Pages run in an **in-memory** Chromium partition. Authenticator secrets stay in Mini's renderer storage and survive **Reset Session**.
+Pages run in an **in-memory** Chromium partition. Authenticator secrets stay in Minimal's renderer storage and survive **Reset Session**.
 
 ## Pull requests
 

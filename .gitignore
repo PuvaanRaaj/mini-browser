@@ -13,13 +13,11 @@
 # testing
 /coverage
 
-# electron
+# production
+/build
 /out/
 /release/
 /.next/
-
-# production
-/build
 
 # misc
 .DS_Store

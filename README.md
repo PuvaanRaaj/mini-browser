@@ -1,4 +1,4 @@
-# Mini
+# Minimal
 
 A personal Chromium browser for macOS. White window, almost no chrome: one search field on a new tab, then a slim title pill and URL bar over the page. Fresh session, Orion-style focus mode, built-in TOTP authenticator.
 
@@ -50,23 +50,23 @@ npm install
 npm run dev
 ```
 
-Build `Mini.app` (Apple Silicon lands in `mac-arm64/`):
+Build `Minimal.app` (Apple Silicon lands in `mac-arm64/`):
 
 ```bash
 npm run dist:mac
 npm run open:mac
 ```
 
-From the repo root: `open release/mac-arm64/Mini.app`  
-If you already `cd`'d into `release/`: `open mac-arm64/Mini.app`
+From the repo root: `open release/mac-arm64/Minimal.app`  
+If you already `cd`'d into `release/`: `open mac-arm64/Minimal.app`
 
-You can also mount the disk image: `open release/Mini-0.1.0-mac-arm64.dmg`.
+You can also mount the disk image: `open release/Minimal-0.1.0-mac-arm64.dmg`.
 
 The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
 
 ## Why this exists
 
-A full browser is cookies, extensions, and logged-in tabs. Mini is the opposite:
+A full browser is cookies, extensions, and logged-in tabs. Minimal is the opposite:
 
 - **New tab** is a white canvas with one search field. After you go somewhere, a slim bar shows the page title and URL — no back/forward buttons, no extra toolbar.
 - **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
@@ -92,11 +92,11 @@ Search queries go to DuckDuckGo. Hostnames open as `https://`.
 
 ## Authenticator
 
-The side panel is the daily driver: paste an `otpauth://` URI or a base32 secret, click a code to copy it.
+The authenticator panel is the daily driver: paste an `otpauth://` URI or a base32 secret, click a code to copy it.
 
-Secrets live in Mini's own renderer storage. They survive **Reset Session**, which only throws away the throwaway Chromium profile.
+Secrets live in Minimal's own renderer storage. They survive **Reset Session**, which only throws away the throwaway Chromium profile.
 
-The same authenticator ships as a Manifest V3 extension in `extension/`. Mini loads it into the guest session; you can also Load unpacked in Chrome.
+The same authenticator ships as a Manifest V3 extension in `extension/`. Minimal loads it into the guest session; you can also Load unpacked in Chrome.
 
 ## Stack
 

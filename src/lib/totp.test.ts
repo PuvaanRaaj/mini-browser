@@ -18,8 +18,8 @@ assert.equal(parsed.digits, 6);
 assert.equal(parsed.period, 30);
 
 const fromSecret = buildAccount({
-  issuer: "Mini",
-  label: "demo@mini.local",
+  issuer: "Minimal",
+  label: "demo@minimal.local",
   secret: "jbswy3dpehpk3pxp",
 });
 assert.equal(fromSecret.secret, "JBSWY3DPEHPK3PXP");

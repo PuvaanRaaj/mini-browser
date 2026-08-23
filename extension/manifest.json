@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Mini Authenticator",
+  "name": "Minimal Authenticator",
   "version": "1.0.0",
-  "description": "TOTP two-factor codes for the Mini browser. Secrets stay on this device.",
+  "description": "TOTP two-factor codes for the Minimal browser. Secrets stay on this device.",
   "action": {
-    "default_title": "Mini Authenticator",
+    "default_title": "Minimal Authenticator",
     "default_popup": "popup.html"
   },
   "permissions": ["storage", "clipboardWrite"],

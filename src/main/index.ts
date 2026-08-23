@@ -13,9 +13,9 @@ if (process.platform === "linux") {
 let mainWindow: BrowserWindow | null = null;
 let mini: MiniSession | null = null;
 
-app.setName("Mini");
+app.setName("Minimal");
 app.setAboutPanelOptions({
-  applicationName: "Mini",
+  applicationName: "Minimal",
   applicationVersion: app.getVersion(),
   copyright: "A personal Chromium browser",
 });
@@ -26,7 +26,7 @@ function createWindow(): void {
     height: 860,
     minWidth: 720,
     minHeight: 480,
-    title: "Mini",
+    title: "Minimal",
     backgroundColor: "#ffffff",
     show: false,
     autoHideMenuBar: process.platform !== "darwin",
@@ -68,11 +68,11 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  app.setAppUserModelId("app.mini.browser");
+  app.setAppUserModelId("app.minimal.browser");
 
   ipcMain.handle("mini:ready", () => mini?.getState() ?? null);
   ipcMain.handle("mini:command", async (_event, command: BrowserCommand) => {
-    if (!mini) throw new Error("Mini is not running.");
+    if (!mini) throw new Error("Minimal is not running.");
     return mini.handle(command);
   });
   ipcMain.on("mini:layout", (_event, rect: LayoutRect) => {

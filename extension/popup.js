@@ -96,8 +96,8 @@ formEl.addEventListener("submit", async (event) => {
 document.getElementById("demo").addEventListener("click", async () => {
   accounts.push({
     id: crypto.randomUUID(),
-    issuer: "Mini",
-    label: "demo@mini.local",
+    issuer: "Minimal",
+    label: "demo@minimal.local",
     secret: "JBSWY3DPEHPK3PXP",
     algorithm: "SHA1",
     digits: 6,

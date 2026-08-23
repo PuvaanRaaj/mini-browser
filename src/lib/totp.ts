@@ -104,8 +104,8 @@ export function buildAccount(input: {
 
 /** RFC 6238 demo secret so the panel is usable before you add real accounts. */
 export const DEMO_ACCOUNT: Omit<AuthenticatorAccount, "id" | "createdAt"> = {
-  issuer: "Mini",
-  label: "demo@mini.local",
+  issuer: "Minimal",
+  label: "demo@minimal.local",
   secret: "JBSWY3DPEHPK3PXP",
   algorithm: "SHA1",
   digits: 6,
