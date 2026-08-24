@@ -15,10 +15,13 @@ const hydrate = (value) =>
     .replaceAll("__VERSION__", version)
     .replaceAll("__SITE_URL__", siteUrl);
 const template = await readFile(join(root, "website/index.html"), "utf8");
+const changelogTemplate = await readFile(join(root, "website/changelog.html"), "utf8");
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await writeFile(join(output, "index.html"), hydrate(template));
+await mkdir(join(output, "changelog"), { recursive: true });
+await writeFile(join(output, "changelog", "index.html"), hydrate(changelogTemplate));
 await cp(join(root, "resources/icon.svg"), join(output, "icon.svg"));
 await cp(join(root, "resources/icon.png"), join(output, "icon.png"));
 await cp(join(root, "website/og.png"), join(output, "og.png"));
