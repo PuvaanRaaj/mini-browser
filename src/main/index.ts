@@ -51,7 +51,10 @@ function createWindow(): void {
           { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 },
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
-      sandbox: false,
+      // The local chrome renderer needs no Node privileges. Keep it sandboxed
+      // everywhere Chromium can support it; Linux/WSL already opts out above
+      // because its shared-memory setup cannot start a sandboxed renderer.
+      sandbox: process.platform !== "linux",
       contextIsolation: true,
       nodeIntegration: false,
     },
