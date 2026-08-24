@@ -41,6 +41,7 @@ export function useBookmarks(): {
   bookmarks: Bookmark[];
   add: (url: string, title: string, favicon?: string | null) => void;
   remove: (id: string) => void;
+  update: (id: string, patch: { title?: string; url?: string }) => void;
   toggle: (url: string, title: string, favicon?: string | null) => void;
   isSaved: (url: string) => boolean;
 } {
@@ -82,6 +83,25 @@ export function useBookmarks(): {
     [write],
   );
 
+  const update = useCallback(
+    (id: string, patch: { title?: string; url?: string }) => {
+      const next = parseBookmarks(readRaw()).map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              title: patch.title?.trim() || item.title,
+              // A different site means the old icon no longer describes it.
+              ...(patch.url?.trim() && patch.url.trim() !== item.url
+                ? { url: patch.url.trim(), favicon: null }
+                : {}),
+            }
+          : item,
+      );
+      write(next);
+    },
+    [write],
+  );
+
   const toggle = useCallback(
     (url: string, title: string, favicon: string | null = null) => {
       const current = parseBookmarks(readRaw());
@@ -97,5 +117,5 @@ export function useBookmarks(): {
     [bookmarks],
   );
 
-  return { bookmarks, add, remove, toggle, isSaved };
+  return { bookmarks, add, remove, update, toggle, isSaved };
 }

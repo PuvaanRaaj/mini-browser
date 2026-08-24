@@ -1,4 +1,5 @@
 import { PlusIcon, XIcon } from "lucide-react";
+import { useState } from "react";
 
 import { SiteIcon } from "@/components/site-icon";
 import { modLabel } from "@/lib/mod";
@@ -12,6 +13,7 @@ export function TabStrip({
   onSelect,
   onClose,
   onNew,
+  onMove,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
@@ -19,10 +21,21 @@ export function TabStrip({
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;
+  onMove: (id: string, toIndex: number) => void;
 }) {
   const visibleTabs = tabs.filter((tab) => !tab.isStartPage || tabs.length > 1);
   const side = position === "side";
   const mod = modLabel();
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  const drop = (targetId: string) => {
+    if (!draggingId || draggingId === targetId) return;
+    // Index into the full tab list, since the strip may hide the start tab.
+    onMove(draggingId, tabs.findIndex((tab) => tab.id === targetId));
+    setDraggingId(null);
+    setOverId(null);
+  };
 
   return (
     <div className={cn("mini-tabs", side && "mini-tabs-side")} data-agent="tabs">
@@ -31,7 +44,34 @@ export function TabStrip({
         return (
           <div
             key={tab.id}
-            className={cn("mini-tab", active && "mini-tab-active", side && "mini-tab-side")}
+            className={cn(
+              "mini-tab",
+              active && "mini-tab-active",
+              side && "mini-tab-side",
+              draggingId === tab.id && "mini-tab-dragging",
+              overId === tab.id && draggingId !== tab.id && "mini-tab-drop-target",
+            )}
+            draggable
+            onDragStart={(event) => {
+              setDraggingId(tab.id);
+              event.dataTransfer.effectAllowed = "move";
+              // Firefox and Chromium both refuse to start a drag without data.
+              event.dataTransfer.setData("text/plain", tab.id);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              setOverId(tab.id);
+            }}
+            onDragLeave={() => setOverId((id) => (id === tab.id ? null : id))}
+            onDrop={(event) => {
+              event.preventDefault();
+              drop(tab.id);
+            }}
+            onDragEnd={() => {
+              setDraggingId(null);
+              setOverId(null);
+            }}
           >
             <button
               type="button"
