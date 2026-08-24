@@ -16,7 +16,7 @@ import { useState, type RefObject } from "react";
 import { HeaderCats } from "@/components/header-cats";
 import { TabStrip } from "@/components/tab-strip";
 import { modLabel } from "@/lib/mod";
-import type { FavoritesMode, TabInfo, TabPosition } from "@/lib/types";
+import type { TabInfo, TabPosition } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function CompactChrome({
@@ -28,7 +28,6 @@ export function CompactChrome({
   authenticatorOpen,
   tabPosition,
   bookmarked,
-  favoritesMode,
   onSelect,
   onClose,
   onNew,
@@ -54,7 +53,6 @@ export function CompactChrome({
   authenticatorOpen: boolean;
   tabPosition: TabPosition;
   bookmarked: boolean;
-  favoritesMode: FavoritesMode;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;

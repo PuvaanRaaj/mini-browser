@@ -281,7 +281,6 @@ export function MiniApp() {
               authenticatorOpen={authenticatorOpen}
               tabPosition={settings.tabPosition}
               bookmarked={activeSaved}
-              favoritesMode={favoritesMode}
               onSelect={(id) => dispatch({ type: "switchTab", id })}
               onClose={(id) => dispatch({ type: "closeTab", id })}
               onNew={() => dispatch({ type: "newTab" })}
