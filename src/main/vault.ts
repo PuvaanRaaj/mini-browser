@@ -10,6 +10,7 @@ import type {
   PasswordInput,
   VaultStatus,
 } from "../lib/vault-types";
+import type { OAuthTokenSet } from "./oauth";
 
 export type VaultCipher = {
   isEncryptionAvailable: () => boolean;
@@ -23,6 +24,7 @@ type VaultData = {
   version: 1;
   authenticatorAccounts: AuthenticatorAccount[];
   passwords: StoredPassword[];
+  googleOAuth?: OAuthTokenSet | null;
 };
 
 const EMPTY_VAULT: VaultData = { version: 1, authenticatorAccounts: [], passwords: [] };
@@ -126,6 +128,26 @@ export class SecureVault {
     return this.serial(async () => {
       const data = await this.read();
       return data.passwords.find((entry) => entry.id === id) ?? null;
+    });
+  }
+
+  hasGoogleOAuth(): Promise<boolean> {
+    return this.serial(async () => Boolean((await this.read()).googleOAuth));
+  }
+
+  saveGoogleOAuth(tokens: OAuthTokenSet): Promise<void> {
+    return this.serial(async () => {
+      const data = await this.read();
+      data.googleOAuth = tokens;
+      await this.write(data);
+    });
+  }
+
+  clearGoogleOAuth(): Promise<void> {
+    return this.serial(async () => {
+      const data = await this.read();
+      data.googleOAuth = null;
+      await this.write(data);
     });
   }
 

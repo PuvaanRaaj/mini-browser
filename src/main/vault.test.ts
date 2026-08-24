@@ -40,9 +40,21 @@ async function main() {
   assert.equal("password" in password, false);
   assert.equal((await vault.listPasswords()).length, 1);
   assert.equal((await vault.passwordSecret(password.id))?.password, "correct horse battery staple");
+  await vault.saveGoogleOAuth({
+    accessToken: "access-token-secret",
+    refreshToken: "refresh-token-secret",
+    idToken: null,
+    tokenType: "Bearer",
+    scope: "openid email profile",
+    expiresAt: Date.now() + 3_600_000,
+  });
+  assert.equal(await vault.hasGoogleOAuth(), true);
   const bytes = readFileSync(path);
   assert.equal(bytes.includes(Buffer.from("correct horse battery staple")), false);
   assert.equal(bytes.includes(Buffer.from("JBSWY3DPEHPK3PXP")), false);
+  assert.equal(bytes.includes(Buffer.from("refresh-token-secret")), false);
+  await vault.clearGoogleOAuth();
+  assert.equal(await vault.hasGoogleOAuth(), false);
   await assert.rejects(
     vault.savePassword({ origin: "http://example.com", username: "user", password: "secret" }),
     /exact HTTPS origin/,

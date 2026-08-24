@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 import type { BrowserCommand, BrowserState, LayoutRect } from "../lib/types";
 import type { AuthenticatorAccount } from "../lib/totp";
-import type { PasswordInput, VaultAPI } from "../lib/vault-types";
+import type { GoogleAuthAPI, PasswordInput, VaultAPI } from "../lib/vault-types";
 
 const vault: VaultAPI = {
   status: () => ipcRenderer.invoke("mini:vault-status"),
@@ -15,10 +15,16 @@ const vault: VaultAPI = {
   deletePassword: (id: string) => ipcRenderer.invoke("mini:vault-delete-password", id),
   fillPassword: (id: string) => ipcRenderer.invoke("mini:vault-fill-password", id),
 };
+const googleAuth: GoogleAuthAPI = {
+  status: () => ipcRenderer.invoke("mini:google-auth-status"),
+  signIn: () => ipcRenderer.invoke("mini:google-auth-sign-in"),
+  signOut: () => ipcRenderer.invoke("mini:google-auth-sign-out"),
+};
 
 const mini = {
   platform: process.platform as NodeJS.Platform,
   vault,
+  googleAuth,
   ready: (): Promise<BrowserState | null> => ipcRenderer.invoke("mini:ready"),
   command: (command: BrowserCommand): Promise<BrowserState> =>
     ipcRenderer.invoke("mini:command", command),

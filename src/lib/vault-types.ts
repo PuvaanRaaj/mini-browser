@@ -35,3 +35,14 @@ export type VaultAPI = {
   deletePassword: (id: string) => Promise<void>;
   fillPassword: (id: string) => Promise<void>;
 };
+
+export type GoogleAuthStatus = {
+  configured: boolean;
+  signedIn: boolean;
+};
+
+export type GoogleAuthAPI = {
+  status: () => Promise<GoogleAuthStatus>;
+  signIn: () => Promise<GoogleAuthStatus>;
+  signOut: () => Promise<GoogleAuthStatus>;
+};

@@ -5,6 +5,7 @@ import {
   BrowserWindow,
   ipcMain,
   safeStorage,
+  shell,
   type IpcMainEvent,
   type IpcMainInvokeEvent,
 } from "electron";
@@ -13,7 +14,9 @@ import type { BrowserCommand, LayoutRect } from "../lib/types";
 import type { AuthenticatorAccount } from "../lib/totp";
 import type { PasswordInput } from "../lib/vault-types";
 import { AgentServer } from "./agent-server";
+import { benchmarkOutputPath, runBenchmark } from "./benchmark";
 import { installMenu } from "./menu";
+import { runGoogleOAuth } from "./oauth";
 import { isWsl, rendererSandboxEnabled } from "./security";
 import { MiniSession, routeBrowserShortcut } from "./tabs";
 import { SecureVault } from "./vault";
@@ -26,10 +29,15 @@ if (isWsl()) {
   app.commandLine.appendSwitch("disable-dev-shm-usage");
 }
 
+const benchmarkOutput = benchmarkOutputPath();
+const benchmarkProfile = process.argv.find((argument) => argument.startsWith("--benchmark-profile="))?.slice("--benchmark-profile=".length);
+if (benchmarkProfile) app.setPath("userData", benchmarkProfile);
+
 let mainWindow: BrowserWindow | null = null;
 let mini: MiniSession | null = null;
 let agentServer: AgentServer | null = null;
 let vault: SecureVault | null = null;
+let googleOAuthInFlight: Promise<void> | null = null;
 
 app.setName("Minimal");
 app.setAboutPanelOptions({
@@ -119,7 +127,9 @@ app.whenReady().then(() => {
   if (process.platform === "darwin") {
     const config = app.isPackaged
       ? readPackagedWebAuthnConfig(join(process.resourcesPath, "webauthn.json"))
-      : { keychainAccessGroup: "app.minimal.browser.webauthn" };
+      : process.env.MINIMAL_DEV_WEBAUTHN === "1"
+        ? { keychainAccessGroup: "app.minimal.browser.webauthn" }
+        : null;
     if (config) {
       app.configureWebAuthn({
         touchID: {
@@ -127,7 +137,7 @@ app.whenReady().then(() => {
           promptReason: "verify your identity on $1",
         },
       });
-    } else {
+    } else if (app.isPackaged) {
       console.error("Touch ID passkeys are disabled: signed WebAuthn configuration is missing.");
     }
   }
@@ -200,12 +210,56 @@ app.whenReady().then(() => {
     if (!mini) throw new Error("Minimal is not running.");
     await mini.fillPassword(entry);
   });
+  ipcMain.handle("mini:google-auth-status", async (event) => {
+    assertTrustedRenderer(event);
+    const configured = Boolean(process.env.MINIMAL_GOOGLE_OAUTH_CLIENT_ID?.trim());
+    return { configured, signedIn: configured && await requiredVault().hasGoogleOAuth() };
+  });
+  ipcMain.handle("mini:google-auth-sign-in", async (event) => {
+    assertTrustedRenderer(event);
+    const clientId = process.env.MINIMAL_GOOGLE_OAUTH_CLIENT_ID?.trim() ?? "";
+    if (!clientId) throw new Error("MINIMAL_GOOGLE_OAUTH_CLIENT_ID is not configured.");
+    if (googleOAuthInFlight) throw new Error("Google sign-in is already in progress.");
+    googleOAuthInFlight = (async () => {
+      const tokens = await runGoogleOAuth(
+        { clientId },
+        { openExternal: (url) => shell.openExternal(url) },
+      );
+      await requiredVault().saveGoogleOAuth(tokens);
+    })();
+    try {
+      await googleOAuthInFlight;
+    } finally {
+      googleOAuthInFlight = null;
+    }
+    return { configured: true, signedIn: true };
+  });
+  ipcMain.handle("mini:google-auth-sign-out", async (event) => {
+    assertTrustedRenderer(event);
+    await requiredVault().clearGoogleOAuth();
+    return {
+      configured: Boolean(process.env.MINIMAL_GOOGLE_OAUTH_CLIENT_ID?.trim()),
+      signedIn: false,
+    };
+  });
 
   installMenu(
     () => mini,
     () => mainWindow,
   );
   createWindow();
+  if (benchmarkOutput && mini) {
+    void runBenchmark(mini, benchmarkOutput).then(
+      (result) => {
+        console.log(JSON.stringify(result));
+        app.quit();
+      },
+      (error) => {
+        console.error("Benchmark failed.", error);
+        app.exit(1);
+      },
+    );
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

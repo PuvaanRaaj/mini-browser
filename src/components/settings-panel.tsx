@@ -1,8 +1,10 @@
 import { XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { FavoritesMode, MiniSettings, TabPosition } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { GoogleAuthStatus } from "@/lib/vault-types";
 
 const FAVORITES_MODES: { value: FavoritesMode; label: string; hint: string }[] = [
   { value: "always", label: "Always", hint: "Pinned under the address bar." },
@@ -73,6 +75,25 @@ export function SettingsPanel({
   onClose: () => void;
 }) {
   const activeMode = FAVORITES_MODES.find((mode) => mode.value === settings.favoritesMode);
+  const [google, setGoogle] = useState<GoogleAuthStatus>({ configured: false, signedIn: false });
+  const [googleMessage, setGoogleMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void window.mini?.googleAuth.status().then(setGoogle);
+  }, []);
+
+  const toggleGoogle = async () => {
+    const api = window.mini?.googleAuth;
+    if (!api) return;
+    setGoogleMessage(google.signedIn ? "Signing out…" : "Continue in your system browser…");
+    try {
+      const next = google.signedIn ? await api.signOut() : await api.signIn();
+      setGoogle(next);
+      setGoogleMessage(next.signedIn ? "Google account connected." : "Google account disconnected.");
+    } catch (caught) {
+      setGoogleMessage(caught instanceof Error ? caught.message : "Google sign-in failed.");
+    }
+  };
 
   return (
     <aside className="mini-sheet">
@@ -133,6 +154,19 @@ export function SettingsPanel({
             />
             Remember logins between launches
           </label>
+        </Row>
+
+        <Row
+          title="Minimal Google account"
+          hint="App-owned sign-in opens your system browser and uses OAuth with PKCE. It is separate from website cookies and user-agent handling."
+        >
+          <Button size="sm" variant={google.signedIn ? "outline" : "default"} disabled={!google.configured} onClick={() => void toggleGoogle()}>
+            {google.signedIn ? "Disconnect Google" : "Connect Google"}
+          </Button>
+          {!google.configured ? (
+            <p className="mt-2 text-[11px] text-muted-foreground">Set MINIMAL_GOOGLE_OAUTH_CLIENT_ID to enable this build.</p>
+          ) : null}
+          {googleMessage ? <p className="mt-2 text-[11px] text-muted-foreground" role="status">{googleMessage}</p> : null}
         </Row>
 
         <Row

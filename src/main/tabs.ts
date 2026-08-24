@@ -824,7 +824,7 @@ async function loadAuthenticatorExtension(ses: Session): Promise<boolean> {
       ? join(process.resourcesPath, "extension")
       : join(process.cwd(), "extension");
   try {
-    await ses.loadExtension(dir, { allowFileAccess: true });
+    await ses.extensions.loadExtension(dir, { allowFileAccess: true });
     return true;
   } catch {
     return false;
