@@ -1,6 +1,12 @@
 import { join } from "node:path";
 
-import { app, BrowserWindow, ipcMain } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  type IpcMainEvent,
+  type IpcMainInvokeEvent,
+} from "electron";
 
 import type { BrowserCommand, LayoutRect } from "../lib/types";
 import { AgentServer } from "./agent-server";
@@ -89,18 +95,37 @@ function createWindow(): void {
 app.whenReady().then(() => {
   app.setAppUserModelId("app.minimal.browser");
 
-  ipcMain.handle("mini:ready", () => mini?.getState() ?? null);
-  ipcMain.handle("mini:command", async (_event, command: BrowserCommand) => {
+  // Electron ships the Touch ID / Secure Enclave platform authenticator dark
+  // by default: until this is called, passkey prompts never appear and sites
+  // like Google hang on "Complete sign-in using your passkey". The access
+  // group must also be listed in resources/entitlements.mac.plist so signed
+  // release builds can store credentials.
+  app.configureWebAuthn({
+    touchID: {
+      keychainAccessGroup: "app.minimal.browser.webauthn",
+      promptReason: "verify your identity on $1",
+    },
+  });
+
+  ipcMain.handle("mini:ready", (event) => {
+    if (!isTrustedRenderer(event)) return null;
+    return mini?.getState() ?? null;
+  });
+  ipcMain.handle("mini:command", async (event, command: BrowserCommand) => {
+    if (!isTrustedRenderer(event)) throw new Error("Untrusted renderer.");
     if (!mini) throw new Error("Minimal is not running.");
     return mini.handle(command);
   });
-  ipcMain.on("mini:layout", (_event, rect: LayoutRect) => {
+  ipcMain.on("mini:layout", (event, rect: LayoutRect) => {
+    if (!isTrustedRenderer(event)) return;
     mini?.applyLayout(rect);
   });
-  ipcMain.on("mini:persist-session", (_event, enabled: boolean) => {
+  ipcMain.on("mini:persist-session", (event, enabled: boolean) => {
+    if (!isTrustedRenderer(event)) return;
     void mini?.setPersistSession(enabled === true);
   });
-  ipcMain.on("mini:chrome-theme", (_event, theme: "light" | "dark") => {
+  ipcMain.on("mini:chrome-theme", (event, theme: "light" | "dark") => {
+    if (!isTrustedRenderer(event)) return;
     // Both surfaces are dark now, but keep the hook so a light theme can
     // repaint the caption strip without new plumbing.
     if (process.platform === "darwin") return;
@@ -122,6 +147,12 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+/** Only the local app renderer may call privileged Mini IPC handlers. */
+function isTrustedRenderer(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
+  const window = mainWindow;
+  return Boolean(window && !window.isDestroyed() && event.sender === window.webContents);
+}
 
 // Give the cookie store a chance to land before the process goes away, or a
 // login made seconds earlier is lost despite "Stay signed in".
