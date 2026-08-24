@@ -2,6 +2,11 @@
 
 This roadmap keeps the browser fast while making releases predictable. The GitHub `main` branch remains the source of truth, and Vercel consumes it.
 
+## Versioning contract
+
+- **1.x** — the current Electron build. The next tagged release is **1.0.0**.
+- **2.0** — reserved. The Rust/native-shell rewrite is shelved while the Chromium app is hardened and measured. Reconsider it only if the 1.x benchmark budgets cannot be met without replacing the core.
+
 ## 1. Measure before changing behavior
 
 Create a small baseline on a clean Mac and record it for every release:

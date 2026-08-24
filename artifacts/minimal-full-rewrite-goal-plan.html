@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Browser — Full Rewrite Goal Plan</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           max-width: 960px; margin: 40px auto; padding: 0 24px;
+           color: #1a1a1a; line-height: 1.6; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h2 { font-size: 1.3rem; margin-top: 2em; color: #0066cc; }
+    h3 { font-size: 1.05rem; margin-top: 1.5em; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: #f0f4ff; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px;
+           font-family: 'SF Mono', Consolas, monospace; font-size: 0.9em; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px;
+          overflow-x: auto; font-size: 0.875rem; line-height: 1.5; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .badge-high { background: #fee2e2; color: #991b1b; padding: 2px 8px;
+                  border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-medium { background: #fef3c7; color: #92400e; padding: 2px 8px;
+                    border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-low { background: #d1fae5; color: #065f46; padding: 2px 8px;
+                 border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    blockquote { border-left: 4px solid #0066cc; margin: 0; padding: 8px 16px;
+                 background: #f0f4ff; color: #333; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 4px 0; }
+    .meta { color: #666; font-size: 0.85em; margin-bottom: 2em; }
+    .small { color: #666; font-size: 0.88em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Minimal Browser — Full Rewrite Goal Plan</h1>
+    <p class="meta">23 August 2026 · Author: Puvaan · Baseline: <code>b04b346</code> on <code>main</code></p>
+    <blockquote>
+      <strong>Goal:</strong> replace Electron, React, Node-side browser orchestration, persistence, packaging, and the landing-page release path with a shared Rust core plus thin native AppKit and Win32 shells using WKWebView and WebView2, while preserving current behavior and proving a decisive performance win before cutover.
+    </blockquote>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Latest-head reality</h2>
+      <p>The checkout was fast-forwarded from <code>388951c</code> to <code>b04b346</code>. PR #1 is already merged, not pending. It adds Windows x64 NSIS and portable targets, Windows/WSL2 renderer fixes, and a much richer browser UI.</p>
+      <table>
+        <thead><tr><th>Latest contract</th><th>Rewrite consequence</th></tr></thead>
+        <tbody>
+          <tr><td>Windows x64 NSIS and portable packages</td><td>Windows must build in CI from the first rewrite milestone. Do not treat it as a later port.</td></tr>
+          <tr><td>Top and side tabs</td><td>Both layouts become parity fixtures and keyboard-tested flows.</td></tr>
+          <tr><td>Favorites bar/panel, settings, session restore</td><td>Move durable data into the Rust core; do not lose existing exported user data.</td></tr>
+          <tr><td>Fresh browsing session by default</td><td>Use nonpersistent WKWebView storage on macOS; use a temporary WebView2 user-data folder plus explicit clear/delete lifecycle on Windows.</td></tr>
+          <tr><td>Built-in blocking and authenticator migration</td><td>Implement platform-native request filtering, a first-class Firefox Authenticator import flow, and OS-backed secret storage; never expose native IPC to remote page webviews.</td></tr>
+          <tr><td>Agent mode</td><td>Preserve loopback-only opt-in control, but migrate toward typed, approval-aware actions and keep arbitrary evaluation off by default.</td></tr>
+        </tbody>
+      </table>
+      <p>Latest-head verification passed: unit tests, TypeScript, production build, and bundle budget. The new renderer is 737,628 B raw and CSS is 59,687 B raw. ESLint remains misconfigured and is not a meaningful gate.</p>
+    </section>
+
+    <section>
+      <h2>2. Selected architecture</h2>
+      <table>
+        <thead><tr><th>Layer</th><th>Choice</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td>Desktop hosts</td><td>Swift/AppKit on macOS; Rust + <code>windows</code> crate/Win32 on Windows</td><td>Native windows, controls, menus, shortcuts, lifecycle, accessibility, updater, packaging, and telemetry.</td></tr>
+          <tr><td>Page engine</td><td>WKWebView on macOS; WebView2 on Windows</td><td>Use the OS engine instead of bundling Chromium.</td></tr>
+          <tr><td>Shell UI</td><td>Native AppKit and Win32 controls</td><td>Omnibox, tabs, start page, sheets, favorites, and settings appear before the page engine starts. No shell webview or JavaScript runtime.</td></tr>
+          <tr><td>State core</td><td>Pure Rust crates</td><td>Tab state machine, URL resolution, settings, bookmarks, sessions, import/export, rule compilation, benchmark schema.</td></tr>
+          <tr><td>Persistence</td><td>Versioned Rust storage</td><td>Atomic settings/bookmarks/session files; OS Keychain/Credential Manager for TOTP secrets.</td></tr>
+          <tr><td>Content blocking</td><td>Shared normalized rule compiler + platform adapters</td><td>WKContentRuleList on macOS; WebView2 WebResourceRequested filters on Windows; O(host labels) fallback lookup.</td></tr>
+          <tr><td>Website</td><td>Static HTML/CSS with a small build script</td><td>OS-aware downloads, benchmark scorecard, release metadata, checksums, accurate Windows availability.</td></tr>
+        </tbody>
+      </table>
+      <p>Apple provides a truly nonpersistent WKWebsiteDataStore. Microsoft documents that WebView2 browsing data lives in a user-data folder whose lifetime the host controls; the Windows adapter therefore needs explicit runtime cleanup rather than claiming in-memory parity. Microsoft also recommends lightweight XAML or Win32 instead of WebView2 for initial UI because creating WebView2 adds startup cost, which is why the final shell is native.</p>
+
+      <h3>Repository target</h3>
+      <pre><code>apps/
+  macos/                   # Swift/AppKit shell and WKWebView adapter
+  windows/                 # Rust/Win32 shell and WebView2 adapter
+  website/                 # static release and benchmark site
+crates/
+  minimal-core/            # state machine and domain logic
+  minimal-storage/         # settings, bookmarks, migration, secrets interface
+  minimal-blocker/         # rule normalization/compiler/benchmark
+  minimal-platform/        # platform traits
+  minimal-agent/           # opt-in typed local automation
+benchmarks/
+  fixtures/ harness/ baselines/ schemas/
+legacy-electron/           # temporary during migration; removed only at cutover</code></pre>
+    </section>
+
+    <section>
+      <h2>3. Non-negotiable security boundaries</h2>
+      <ul>
+        <li>Remote page webviews receive no native command bridge, host objects, filesystem access, secret access, or initialization scripts that expose privileged APIs.</li>
+        <li>Only native shell code can invoke the allowlisted Rust core API. Every command validates arguments and lifecycle state.</li>
+        <li>Permissions default to deny. Camera, microphone, location, notifications, downloads, external schemes, and popups require explicit policy.</li>
+        <li>TOTP secrets use OS-backed secret storage. Logs, telemetry, agent snapshots, crash reports, and benchmark artifacts never contain secrets or page credentials.</li>
+        <li>Windows temporary WebView2 data is cleared while controls are alive, all webviews are closed, and only the validated per-session directory is removed afterward.</li>
+        <li>Performance work may not disable sandboxing, web isolation, code signing, CSP, or permission checks.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Phased goal plan</h2>
+      <table>
+        <thead><tr><th>Phase</th><th>Work</th><th>Verification / exit</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>0 · Contract and baseline</td>
+            <td>Create rewrite branch/worktree; capture golden behavior for macOS and Windows; export current features/data formats; record Electron launch, navigation, memory, blocker, package, and BrowserBench baselines.</td>
+            <td>Current <code>main</code> remains releasable. Parity matrix and raw baselines exist. No legacy deletion.</td>
+          </tr>
+          <tr>
+            <td>1 · Cross-platform skeleton</td>
+            <td>Scaffold Rust workspace, Swift/AppKit host, Rust/Win32 host, bridge allowlist, macOS and Windows CI, format/lint/test/build gates.</td>
+            <td>Native new-tab shell builds and appears before web-engine initialization on both OSes. Remote webview has zero privileged commands.</td>
+          </tr>
+          <tr>
+            <td>2 · Core state machine</td>
+            <td>Implement tabs, commands, URL/search resolution, settings, bookmarks, session model, versioned storage, migrations, and deterministic tests in Rust.</td>
+            <td>Pure-core tests cover transitions and malformed persisted data; no UI/localStorage is authoritative.</td>
+          </tr>
+          <tr>
+            <td>3 · Browser vertical slice</td>
+            <td>One window, one page tab, omnibox, navigation, back/forward/reload/stop, page title/loading/error, popup/external-scheme policy, shell/page bounds.</td>
+            <td>End-to-end local fixture passes on macOS and Windows; remote page cannot reach the native bridge.</td>
+          </tr>
+          <tr>
+            <td>4 · Full feature parity</td>
+            <td>Multiple tabs, top/side layouts, focus mode, favorites bar/panel, settings, optional session restore, shortcuts, start page, complete Firefox Authenticator migration, TOTP/HOTP-compatible codes, downloads, and agent mode.</td>
+            <td>Every current-head parity fixture passes on both platforms; keyboard and accessibility flows are tested.</td>
+          </tr>
+          <tr>
+            <td>5 · Privacy and blocking</td>
+            <td>Compile EasyList/EasyPrivacy once, cache with validators/freshness, apply WK content rules and WebView2 filters, implement ephemeral session lifecycle and permission policy.</td>
+            <td>Blocker lookup median &lt;10 µs for fallback path; coverage corpus passes; restart proves no browsing-session persistence by default.</td>
+          </tr>
+          <tr>
+            <td>6 · Performance program</td>
+            <td>Instrument external and internal milestones; add 1/5/10/20-tab memory, navigation, energy, Speedometer, JetStream, MotionMark, and site runs; optimize from traces.</td>
+            <td>Rewrite meets every cutover gate below using ten randomized same-machine runs and retained raw data.</td>
+          </tr>
+          <tr>
+            <td>7 · Release and site</td>
+            <td>macOS arm64/x64 and Windows x64 installers; signing/notarization hooks; Windows release workflow; updater; checksums; site download API and benchmark page; migration/export guide.</td>
+            <td>Clean machines install, run, update, and uninstall. Website exposes Windows only after verified artifacts exist.</td>
+          </tr>
+          <tr>
+            <td>8 · Cutover</td>
+            <td>Run parity/security/performance release candidate; tag last Electron fallback; remove Electron/React/Node runtime and temporary legacy tree; update docs and licenses.</td>
+            <td>No Electron dependency remains. Both platforms pass release smoke tests. Rollback tag and artifacts are documented.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>5. Firefox authenticator migration contract</h2>
+      <blockquote>The rewrite is not feature-complete until Puvaan can export the Authenticator extension vault from Firefox, import it locally into Minimal, verify every supported account, and retain a recovery backup without exposing secrets.</blockquote>
+      <ol>
+        <li>Provide a dedicated <strong>Import from Firefox Authenticator</strong> wizard. Document the source workflow as Firefox Authenticator → Settings → Backup → Download Backup File.</li>
+        <li>Accept the extension's standardized unencrypted <code>authenticator.txt</code>, unencrypted JSON/<code>OTPStorage</code>, one-URI-per-line <code>otpauth://</code>, and password-protected <code>authenticator.json</code> formats. Detect the format and version rather than guessing.</li>
+        <li>For encrypted backups, request the password in a native secure field and decrypt locally only. Support current version 8+ fixtures and separately tested legacy ≤7 fixtures; show the upstream weak-KDF warning for old backups without weakening validation.</li>
+        <li>Preserve issuer, label/account, secret, algorithm, digit count, period, counter, ordering, and supported icon metadata. Implement every account type found in the source vault—including TOTP, HOTP, Steam, and Blizzard/Battle.net—or block finalization with an explicit account-by-account unsupported report. Never silently skip.</li>
+        <li>Preview totals before writing: importable, duplicate, invalid, password-protected, and unsupported. Show no secret values in the preview, logs, crash reports, analytics, agent output, or accessibility labels.</li>
+        <li>Deduplicate by normalized credential identity while retaining distinct accounts that share an issuer or label. Resolve conflicts explicitly.</li>
+        <li>Write the complete import transaction to Keychain/Credential Manager atomically. On any failure, roll back every newly written item and leave the source backup untouched.</li>
+        <li>After import, generate current codes and provide a manual verification checklist before marking migration complete. Do not delete or modify Firefox data.</li>
+        <li>Offer a password-protected Minimal recovery export and a standards-based interoperable export. Never create an unencrypted backup without an explicit warning and confirmation.</li>
+        <li>Test with sanitized upstream-format fixtures for Firefox Authenticator current and legacy encrypted/unencrypted formats, malformed files, wrong passwords, duplicates, large vaults, and every supported OTP type.</li>
+      </ol>
+      <p>The existing code only supports unencrypted JSON and <code>otpauth://</code> lines and currently skips encrypted, HOTP, Steam, and Blizzard/Battle.net entries. The rewrite must close those gaps rather than porting the current limitation.</p>
+      <p class="small">The Authenticator extension's official guide documents local unencrypted and password-protected backup downloads. Its maintainers identify the conventional filenames as <code>authenticator.txt</code> and <code>authenticator.json</code>. Versions 8+ changed encryption after a disclosed weak-KDF issue in versions ≤7, so current and legacy encrypted fixtures require separate handling.</p>
+    </section>
+
+    <section>
+      <h2>6. Cutover performance gates</h2>
+      <table>
+        <thead><tr><th>Metric</th><th>Required result versus latest Electron baseline</th></tr></thead>
+        <tbody>
+          <tr><td>Cold launch → usable omnibox</td><td>At least 25% faster median on both macOS and Windows.</td></tr>
+          <tr><td>Warm launch → usable omnibox</td><td>At least 20% faster median.</td></tr>
+          <tr><td>Private memory, one tab</td><td>At least 30% lower.</td></tr>
+          <tr><td>Private memory, ten controlled tabs</td><td>At least 25% lower.</td></tr>
+          <tr><td>Idle CPU/energy</td><td>No regression; target at least 20% improvement.</td></tr>
+          <tr><td>Matching-engine BrowserBench</td><td>Within 5% of Safari on macOS / Edge on Windows under engine-isolated settings.</td></tr>
+          <tr><td>Default navigation</td><td>No statistically supported regression; target at least 15% lower median load latency or transferred bytes on the real-page corpus.</td></tr>
+          <tr><td>Blocker fallback lookup</td><td>&lt;10 µs median with 100k normalized rules.</td></tr>
+          <tr><td>Shell payload</td><td>No shell JavaScript runtime; native shell resources stay within an explicit build-size budget.</td></tr>
+          <tr><td>Installer</td><td>At least 70% smaller than the equivalent Electron artifact, excluding separately installed system webview runtime.</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Results must include exact hardware, OS, browser and engine versions, settings, run count, randomized order, median, p25–p75, confidence interval, and raw JSON. A target is not a result.</p>
+    </section>
+
+    <section>
+      <h2>7. Windows-specific acceptance contract</h2>
+      <ul>
+        <li>Build and smoke-test on a native Windows runner, not WSL2 alone.</li>
+        <li>Ship x64 NSIS and portable artifacts with stable names; add ARM64 only as a separately verified target.</li>
+        <li>Ensure WebView2 Evergreen is present or bootstrap it through the installer; fail with a useful message if runtime creation fails.</li>
+        <li>Use one shared per-session WebView2 environment/UDF to avoid extra browser processes; never reuse it across launches when fresh-session mode is active.</li>
+        <li>Verify Control-based shortcuts, hidden/custom title bar, DPI scaling, multiple monitors, installer directory choice, Start menu/desktop shortcuts, downloads, file dialogs, and uninstall cleanup.</li>
+        <li>Add a Windows release workflow; the merged PR added packaging configuration but no Windows release job.</li>
+        <li>Fix the repository permission or token path that currently prevents Release Please from creating its release PR.</li>
+        <li>Do not publish “Windows available” on the site until a downloadable artifact and clean-machine smoke test exist.</li>
+        <li>Keep signing as an explicit production blocker until a certificate and secret-backed CI flow exist.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>8. Rewrite operating rules</h2>
+      <ul>
+        <li>This is a full rewrite, but not a blind big-bang deletion. Build new vertical slices beside the legacy baseline, then delete legacy only after cutover gates pass.</li>
+        <li>Do not silently drop or redesign current features. Record intentional changes in an architecture decision log.</li>
+        <li>Do not optimize from intuition. Every optimization needs a trace or benchmark and a before/after artifact.</li>
+        <li>Keep commits phase-scoped, conventional, and independently reviewable. Never mix generated build outputs or secrets.</li>
+        <li>At every phase, update the parity matrix, benchmark delta, risks, and next unblocker.</li>
+        <li>If either native platform adapter cannot meet security, lifecycle, accessibility, or performance requirements, stop and present evidence before switching stacks.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>9. Primary technical references</h2>
+      <ul>
+        <li><a href="https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/performance">Microsoft WebView2 performance guidance, including native initial UI and shared environments</a></li>
+        <li><a href="https://developer.apple.com/documentation/webkit/wkwebsitedatastore">Apple nonpersistent WKWebsiteDataStore</a></li>
+        <li><a href="https://developer.apple.com/documentation/webkit/wkcontentruleliststore">Apple compiled content rule lists</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/user-data-folder">Microsoft WebView2 user-data folder lifecycle</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/webresourcerequested">Microsoft WebView2 request interception</a></li>
+        <li><a href="https://authenticator.cc/docs/en/export-and-import.html">Authenticator extension export and import guide for Firefox, Chrome, and Edge</a></li>
+        <li><a href="https://github.com/Authenticator-Extension/Authenticator/security/advisories/GHSA-gv8m-vgp8-q2xr">Authenticator extension legacy encrypted-backup security advisory</a></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
