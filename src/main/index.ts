@@ -13,6 +13,7 @@ import { AgentServer } from "./agent-server";
 import { installMenu } from "./menu";
 import { isWsl, rendererSandboxEnabled } from "./security";
 import { MiniSession, routeBrowserShortcut } from "./tabs";
+import { readPackagedWebAuthnConfig } from "./webauthn";
 
 if (isWsl()) {
   app.commandLine.appendSwitch("no-sandbox");
@@ -104,12 +105,21 @@ app.whenReady().then(() => {
   // like Google hang on "Complete sign-in using your passkey". The access
   // group must also be listed in resources/entitlements.mac.plist so signed
   // release builds can store credentials.
-  app.configureWebAuthn({
-    touchID: {
-      keychainAccessGroup: "app.minimal.browser.webauthn",
-      promptReason: "verify your identity on $1",
-    },
-  });
+  if (process.platform === "darwin") {
+    const config = app.isPackaged
+      ? readPackagedWebAuthnConfig(join(process.resourcesPath, "webauthn.json"))
+      : { keychainAccessGroup: "app.minimal.browser.webauthn" };
+    if (config) {
+      app.configureWebAuthn({
+        touchID: {
+          keychainAccessGroup: config.keychainAccessGroup,
+          promptReason: "verify your identity on $1",
+        },
+      });
+    } else {
+      console.error("Touch ID passkeys are disabled: signed WebAuthn configuration is missing.");
+    }
+  }
 
   ipcMain.handle("mini:ready", (event) => {
     if (!isTrustedRenderer(event)) return null;

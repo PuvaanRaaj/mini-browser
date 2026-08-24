@@ -84,6 +84,10 @@ export class MiniSession {
   private adblockEnabled = false;
   private zoomByHost = new Map<string, number>();
   private persistSession = false;
+  private webAuthnPrompt: BrowserState["webAuthnPrompt"] = null;
+  private pendingWebAuthn:
+    | { requestId: string; allowedIds: Set<string>; choose: (credentialId?: string | null) => void }
+    | null = null;
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
@@ -104,6 +108,7 @@ export class MiniSession {
       error: null,
       extensionLoaded: this.extensionLoaded,
       adblockEnabled: this.adblockEnabled,
+      webAuthnPrompt: this.webAuthnPrompt,
     };
   }
 
@@ -157,6 +162,9 @@ export class MiniSession {
       case "zoomReset":
         this.stepZoom(0, true);
         break;
+      case "selectWebAuthnAccount":
+        this.selectWebAuthnAccount(command.requestId, command.credentialId);
+        break;
       case "resetSession":
         await this.reset();
         break;
@@ -206,6 +214,7 @@ export class MiniSession {
   }
 
   destroy(): void {
+    this.cancelWebAuthnPrompt();
     for (const tab of this.tabs.values()) {
       this.destroyView(tab);
     }
@@ -228,6 +237,36 @@ export class MiniSession {
     // both the Electron token and the app token ("Minimal/x.y.z", which sits
     // right before "Chrome/") so the UA matches the bundled Chromium exactly.
     this.guest.setUserAgent(chromiumUserAgent(this.guest.getUserAgent()));
+    this.guest.on("select-webauthn-account", (_event, details, callback) => {
+      this.cancelWebAuthnPrompt();
+      if (!details.frame || details.accounts.length === 0) {
+        callback();
+        return;
+      }
+
+      const requestId = randomUUID();
+      let answered = false;
+      const choose = (credentialId?: string | null) => {
+        if (answered) return;
+        answered = true;
+        callback(credentialId);
+      };
+      this.pendingWebAuthn = {
+        requestId,
+        allowedIds: new Set(details.accounts.map((account) => account.credentialId)),
+        choose,
+      };
+      this.webAuthnPrompt = {
+        requestId,
+        relyingPartyId: details.relyingPartyId,
+        accounts: details.accounts.map((account) => ({
+          credentialId: account.credentialId,
+          name: account.name ?? "Passkey account",
+          displayName: account.displayName ?? account.name ?? "Passkey account",
+        })),
+      };
+      this.onState();
+    });
     const session = this.guest;
     this.adblockEnabled = await enableAdblock(session);
     const sessionId = this.sessionId;
@@ -382,6 +421,7 @@ export class MiniSession {
   }
 
   private async reset(): Promise<void> {
+    this.cancelWebAuthnPrompt();
     // An in-memory partition disappears on its own; a persistent one has to be
     // wiped, or "Reset Session" would quietly keep every cookie.
     if (this.persistSession && this.guest) {
@@ -399,6 +439,22 @@ export class MiniSession {
     this.adblockEnabled = false;
     this.sessionId = randomUUID();
     this.createStartTab(true);
+  }
+
+  private selectWebAuthnAccount(requestId: string, credentialId: string | null): void {
+    const pending = this.pendingWebAuthn;
+    if (!pending || pending.requestId !== requestId) return;
+    const selected = credentialId && pending.allowedIds.has(credentialId) ? credentialId : null;
+    this.pendingWebAuthn = null;
+    this.webAuthnPrompt = null;
+    pending.choose(selected);
+  }
+
+  private cancelWebAuthnPrompt(): void {
+    const pending = this.pendingWebAuthn;
+    this.pendingWebAuthn = null;
+    this.webAuthnPrompt = null;
+    pending?.choose(null);
   }
 
   private destroyView(tab: TabRecord): void {

@@ -14,6 +14,7 @@ import { SettingsPanel } from "@/components/settings-panel";
 import { StartPage } from "@/components/start-page";
 import { TabStrip } from "@/components/tab-strip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WebAuthnAccountDialog } from "@/components/webauthn-account-dialog";
 import { useMiniBrowser } from "@/hooks/use-mini-browser";
 import { useBookmarks } from "@/lib/bookmarks";
 import { readSession, saveSession, useSettings } from "@/lib/settings";
@@ -392,6 +393,18 @@ export function MiniApp() {
             ) : null}
           </div>
         </div>
+        {state.webAuthnPrompt ? (
+          <WebAuthnAccountDialog
+            prompt={state.webAuthnPrompt}
+            onSelect={(credentialId) =>
+              dispatch({
+                type: "selectWebAuthnAccount",
+                requestId: state.webAuthnPrompt!.requestId,
+                credentialId,
+              })
+            }
+          />
+        ) : null}
       </div>
     </TooltipProvider>
   );

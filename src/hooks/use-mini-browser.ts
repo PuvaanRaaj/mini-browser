@@ -31,6 +31,7 @@ function previewSeed(): BrowserState {
       error: null,
       extensionLoaded: false,
       adblockEnabled: true,
+      webAuthnPrompt: null,
     };
   }
   return {
@@ -48,6 +49,7 @@ function previewSeed(): BrowserState {
     error: null,
     extensionLoaded: false,
     adblockEnabled: true,
+    webAuthnPrompt: null,
   };
 }
 
@@ -102,8 +104,11 @@ function applyPreviewCommand(state: BrowserState, command: BrowserCommand): Brow
         tabs: [emptyTab(id)],
         activeTabId: id,
         sessionId: crypto.randomUUID(),
+        webAuthnPrompt: null,
       };
     }
+    case "selectWebAuthnAccount":
+      return { ...state, webAuthnPrompt: null };
     default:
       return state;
   }
