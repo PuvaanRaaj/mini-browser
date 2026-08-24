@@ -1,129 +1,114 @@
 # Minimal
 
-Minimal is a focused Chromium browser for macOS: one search field, almost no chrome, a fresh session on every launch, built-in ad blocking, and a local TOTP authenticator.
+**A personal Chromium browser with focus mode and a built-in 2FA authenticator.**
 
-It is a native desktop app designed to keep browsing fast, private, and distraction-free.
+One search field, almost no chrome, a fresh session on every launch. Ads and trackers are blocked out of the box, your TOTP codes live a keystroke away, and an opt-in local API lets browser agents drive it safely.
 
-- **Repository:** [github.com/PuvaanRaaj/mini-browser](https://github.com/PuvaanRaaj/mini-browser)
-- **Website:** [mini-browser-v2.vercel.app](https://mini-browser-v2.vercel.app)
-- **Releases:** [GitHub Releases](https://github.com/PuvaanRaaj/mini-browser/releases)
+| | |
+| --- | --- |
+| **Current release** | `1.0.0` (Electron) · the Rust rewrite is shelved while Chromium is optimized |
+| **Platforms** | macOS (Apple Silicon) · Windows build in CI |
+| **CI** | [![CI](https://github.com/PuvaanRaaj/mini-browser/actions/workflows/ci.yml/badge.svg)](https://github.com/PuvaanRaaj/mini-browser/actions/workflows/ci.yml) |
+| **License** | Apache-2.0 |
+| **Download** | [GitHub Releases](https://github.com/PuvaanRaaj/mini-browser/releases) · [Website](https://mini-browser-v2.vercel.app) |
 
-Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+## Why Minimal exists
 
-## Clone
+A full browser carries cookies, extensions, and a thousand logged-in tabs. Minimal is the opposite:
+
+- **Fresh Chromium every launch** — an in-memory profile; nothing is shared with Safari or Chrome, and *Reset Session* (`⌘⇧R`-free, one click in settings) wipes everything.
+- **Ads and trackers blocked by default** — a built-in high-impact host list applies instantly; EasyList + EasyPrivacy are refreshed in the background and cached. Main-frame navigation is never blocked, so a bad rule can never take down a whole page.
+- **2FA built in** — paste an `otpauth://` URI or base32 secret, click a code to copy it. Secrets are encrypted by the OS-backed main-process vault, never kept in renderer `localStorage`, and survive a session reset. The same authenticator ships as a Manifest V3 extension inside the browser session (`extension/`).
+- **Agent mode** — an opt-in loopback API (`MINIMAL_AGENT=1`) exposing authenticated state, page snapshots, screenshots, and safe commands for local browser agents. See [docs/AGENT_MODE.md](docs/AGENT_MODE.md).
+- **Import your codes** — migrates unencrypted backups from the popular Authenticator extension, skipping duplicates and unsupported entries.
+
+## Quick start
+
+Requirements: Node 22+ (Bun 1.4+ optional for the local landing-page server).
 
 ```bash
 git clone https://github.com/PuvaanRaaj/mini-browser.git
 cd mini-browser
-```
-## Run on a Mac
-
-```bash
 npm install
 npm run dev
 ```
 
-Build `Minimal.app` (Apple Silicon lands in `mac-arm64/`):
+Build the macOS app (Apple Silicon output lands in `release/mac-arm64/`):
 
 ```bash
 npm run dist:mac
-npm run open:mac
+npm run open:mac        # or: open release/mac-arm64/Minimal.app
 ```
 
-From the repo root: `open release/mac-arm64/Minimal.app`
+The `.dmg` lands in `release/`. Signed Touch ID builds require `MINIMAL_APPLE_TEAM_ID=<10-character Team ID>`; `npm run dist:mac` generates matching hardened-runtime entitlements and WebAuthn configuration. Unsigned local development keeps Touch ID disabled unless explicitly opted in.
 
-## Landing page
+## Secure sign-in and vault
 
-`website/` holds the landing page. Run it locally with Bun 1.4.0 or newer:
+- Website cookies are in memory unless **Settings → Stay signed in** is explicitly enabled.
+- App-owned Google sign-in uses the system browser, loopback OAuth callback, state validation, and PKCE. Set `MINIMAL_GOOGLE_OAUTH_CLIENT_ID` for a Google Desktop OAuth client to enable the button in Settings.
+- Passwords, Google OAuth tokens, and TOTP seeds are encrypted through Electron `safeStorage` in the main process. The vault fails closed if OS-backed encryption is unavailable, including Linux `basic_text` fallback.
+- Saved passwords fill only on the exact HTTPS origin they were created for.
+- Passkey selection supports Chromium platform authenticators (Windows Hello), roaming FIDO2 keys, and signed macOS Touch ID/Secure Enclave builds.
+
+## Performance benchmarks
 
 ```bash
-npm run site        # → http://localhost:3000
+npm run benchmark          # Minimal cold/warm, first navigation, 10-tab memory and idle CPU
+npm run benchmark:market   # isolated-profile Chrome and Firefox comparison on macOS
 ```
 
-- Detects the visitor's OS from the User-Agent (server-side, refined client-side) and preselects macOS / Windows / Linux.
-- `/download/latest` streams the newest `.dmg` in `release/` (or `.exe` / `.AppImage` when those targets exist) and falls back to GitHub Releases when no artifact is present.
-- Install card shows `brew install --cask puvaanraaj/tap/minimal` and a one-line `curl` download for macOS; Windows and Linux visitors get an honest "coming soon" plus build-from-source.
-- `?os=windows` (or `linux`/`mac`) previews another platform's state — handy for testing.
-- `PORT=4000 npm run site` changes the port.
-
-For the Homebrew command to work publicly, publish a `homebrew-tap` repo with a Cask for Minimal; for the cURL fallback to work off localhost, publish the `.dmg` as a GitHub release.
-If you already `cd`'d into `release/`: `open mac-arm64/Minimal.app`
-
-You can also mount the disk image: `open release/Minimal-0.1.0-mac-arm64.dmg`.
-
-The `.dmg` lands in `release/`. Gatekeeper signing is left off so a local build is easy; macOS may ask you to open it via System Settings → Privacy & Security the first time.
-
-## Deploy the landing page to Vercel
-
-Vercel hosts the landing page, not the Electron desktop app. Import the repository with the root directory set to `./`, choose **Other**, and click **Deploy**. `vercel.json` runs the lightweight static build in `scripts/vercel-build.mjs` and skips development dependencies. The download button redirects to the newest `.dmg` attached to a GitHub Release; publish a release before offering downloads.
-
-## Releases
-
-CI runs on every pull request and `main` push. Release Please opens a release PR and increments `package.json` and `package-lock.json` automatically. Use conventional commit prefixes so the version is predictable:
-
-- `fix:` → patch release
-- `feat:` → minor release
-- `feat!:` or `BREAKING CHANGE:` → major release
-
-Merge the generated release PR. It creates the version tag and GitHub Release; `release-macos.yml` then builds and uploads the arm64 `.dmg`, `.zip`, blockmaps, and updater metadata. To repair or rebuild an existing release, run **Actions → Build macOS release → Run workflow** and provide its tag.
-
-## Agent mode
-
-For local browser agents, run the opt-in loopback control API with `MINIMAL_AGENT=1`. See [docs/AGENT_MODE.md](docs/AGENT_MODE.md) for authentication, page snapshots, screenshots, and safe commands.
-
-## Roadmap
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the performance, release, and automatic-update plan.
-
-## Why this exists
-
-A full browser is cookies, extensions, and logged-in tabs. Minimal is the opposite:
-
-- **New tab** — `⌘T`, **File → New Tab**, or the **+** next to the tab pill
-- **Fresh Chromium** — in-memory profile, nothing from Safari or Chrome
-- **Ads and trackers blocked** on every session (EasyList + EasyPrivacy, plus a built-in host list)
-- **Authenticator** — key icon to the right of the URL bar (like a Chrome toolbar extension), or `⌘⇧A`. Codes stay in Minimal, not in the throwaway profile.
-
-`⌘L` focuses the URL field. In focus mode it brings back the centered search field. Escape dismisses it.
+Results are written to `.benchmarks/` and intentionally ignored by Git because hardware, OS state, and installed browser versions materially affect them.
 
 ## Keyboard
 
 | Shortcut | Action |
 | --- | --- |
-| `⌘L` | Focus the URL field |
-| `⌘T` | New tab |
-| `⌘W` | Close tab |
+| `⌘L` | Focus the URL field (in focus mode: bring back the centered search field) |
+| `⌘T` / `⌘W` | New tab / close tab |
 | `⌘R` | Reload |
-| `⌘⇧F` | Focus mode (hide the title/URL bar) |
+| `⌘⇧F` | Focus mode — hide the title/URL bar |
 | `⌘⇧A` | Authenticator |
+| `⌘⇧B` | Favorites |
 | `⌘[ / ⌘]` | Back / forward |
-| `Esc` | Close search or authenticator |
+| `Esc` | Dismiss search or the authenticator |
 
-Search queries go to DuckDuckGo. Hostnames open as `https://`.
+Search queries go to DuckDuckGo; hostnames open as `https://`.
 
-## Authenticator
+## Landing page
 
-There is no Chrome Web Store here. 2FA is built in:
+[`website/`](website/) is the download site, deployed on Vercel.
 
-- **Key icon** to the right of the URL bar (same place Chrome puts extension icons)
-- On a new tab, the same key sits in the bottom-right corner
-- **⌘⇧A**, or **View → Authenticator**
+```bash
+npm run site            # → http://localhost:3000  (PORT=4000 to change)
+```
 
-Paste an `otpauth://` URI or a base32 secret, click a code to copy it. Secrets live in Minimal's renderer storage and survive **Reset Session**.
+- Detects the visitor's OS server-side (refined client-side) and preselects macOS / Windows / Linux; `?os=windows` previews another platform's state.
+- `/download/latest` streams the newest installer in `release/` and falls back to GitHub Releases.
+- Deploy: import the repo on Vercel with root directory `./`, framework **Other** — `vercel.json` runs `scripts/vercel-build.mjs`.
 
-### Migrate from the Authenticator extension
+## Releases & versioning
 
-1. In the old extension, open its backup screen and choose **Download Backup File**. Export the unencrypted JSON backup (or its one-line `otpauth://` backup); encrypted backups cannot be read without the old extension's password format.
-2. In Minimal, open **Authenticator** and choose **Import** next to the account search field.
-3. Select the downloaded `.json` or `.txt` file. Accounts are parsed locally, duplicates are ignored, and unsupported HOTP/Steam entries are reported as skipped.
-4. Delete the unencrypted backup file after confirming the codes work.
+- CI runs on every PR and `main` push. [Release Please](https://github.com/googleapis/release-please) opens a release PR from conventional commits: `fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major.
+- Merging the release PR tags `v<version>`; the macOS and Windows workflows then build and upload installers, blockmaps, and updater metadata.
+- **Version contract:** the Electron app is `1.x` (current: `1.0.0`). The Rust/native-shell rewrite is shelved; reconsider it only if measured Chromium work cannot meet the release budgets. See [docs/ROADMAP.md](docs/ROADMAP.md).
+- To rebuild an existing release: **Actions → Build macOS release → Run workflow** with its tag.
 
-The same authenticator also ships as a Manifest V3 extension in `extension/`, loaded into the guest Chromium session. Electron does not draw Chrome's puzzle-piece toolbar, so the key icon is the control.
+## Project layout
 
-## Ad blocking
-
-Ads and trackers are blocked by default in the throwaway session. A built-in host list applies immediately; EasyList and EasyPrivacy are fetched in the background and cached. The shield next to the URL bar means blocking is on. There is no off switch yet.
+```
+src/main/       Electron main process: tabs/session, adblock, agent API, menu
+src/renderer/   React UI: tab rail, URL bar, start page, authenticator panel
+src/preload/    Context-isolated IPC bridge
+extension/      Manifest V3 TOTP authenticator loaded into the guest session
+website/        Landing page (Bun server, deployed on Vercel)
+docs/           Agent-mode and roadmap docs
+artifacts/      Planning documents (the Rust rewrite plan is shelved reference material)
+```
 
 ## Stack
 
-Electron (Chromium), Vite, React, Tailwind, shadcn/ui, [`otpauth`](https://github.com/hectorm/otpauth).
+Electron (Chromium) · Vite · React 19 · Tailwind · shadcn/ui · [`otpauth`](https://github.com/hectorm/otpauth)
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Please open an issue before large changes, and keep commits conventional so Release Please can version them.

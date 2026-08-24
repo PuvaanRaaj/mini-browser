@@ -19,7 +19,7 @@ const ROOT = join(import.meta.dir, "..");
 const PORT = Number(process.env.PORT ?? 3000);
 
 const pkg = await Bun.file(join(ROOT, "package.json")).json();
-const VERSION: string = pkg.version ?? "0.1.0";
+const VERSION: string = pkg.version ?? "1.0.0";
 const GITHUB = "https://github.com/PuvaanRaaj/mini-browser";
 const SITE_URL = (process.env.SITE_URL ?? "https://mini-browser-v2.vercel.app").replace(/\/$/, "");
 const RELEASES_URL = `${GITHUB}/releases`;

@@ -110,7 +110,12 @@ export function parseEasyListHosts(text: string): string[] {
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith("!") || line.startsWith("[")) continue;
-    const match = /^\|\|([a-z0-9.-]+)\^/i.exec(line);
+    // Accept only unconditional whole-host rules: ||host^ with nothing after
+    // the caret. Narrower rules must be skipped because a hostname blocker
+    // cannot express them — ||x.com^*/log.json means "one path on x.com" and
+    // ||host^$third-party means "one context", but flattening either to the
+    // bare host blocks entire legitimate sites (this took x.com down once).
+    const match = /^\|\|([a-z0-9.-]+)\^$/i.exec(line);
     if (match) hosts.push(match[1].toLowerCase());
   }
   return hosts;

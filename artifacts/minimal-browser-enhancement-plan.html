@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Browser — Performance and Product Enhancement Plan</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           max-width: 960px; margin: 40px auto; padding: 0 24px;
+           color: #1a1a1a; line-height: 1.6; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h2 { font-size: 1.3rem; margin-top: 2em; color: #0066cc; }
+    h3 { font-size: 1.05rem; margin-top: 1.5em; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: #f0f4ff; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px;
+           font-family: 'SF Mono', Consolas, monospace; font-size: 0.9em; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px;
+          overflow-x: auto; font-size: 0.875rem; line-height: 1.5; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .badge-high   { background: #fee2e2; color: #991b1b; padding: 2px 8px;
+                    border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-medium { background: #fef3c7; color: #92400e; padding: 2px 8px;
+                    border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-low    { background: #d1fae5; color: #065f46; padding: 2px 8px;
+                    border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    blockquote { border-left: 4px solid #0066cc; margin: 0; padding: 8px 16px;
+                 background: #f0f4ff; color: #333; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 4px 0; }
+    .meta { color: #666; font-size: 0.85em; margin-bottom: 2em; }
+    .small { color: #666; font-size: 0.88em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Minimal Browser — Performance and Product Enhancement Plan</h1>
+    <p class="meta">23 August 2026 · Author: Puvaan · Context: <code>mini-browser</code> v0.1.0</p>
+    <blockquote>
+      <strong>Recommendation:</strong> optimize and instrument the current Electron/WebContentsView core first. Do not rewrite the rendering engine now. Run a bounded Swift/WKWebView experiment only after the optimized Electron baseline exists, and keep it only if it wins decisively on startup, memory, and energy without unacceptable compatibility loss.
+    </blockquote>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. What “fastest browser” should mean</h2>
+      <p>A universal “fastest browser” claim is not defensible: browser speed has several independent dimensions, and synthetic scores change with hardware, browser versions, settings, and benchmark versions. Minimal should pursue a precise promise:</p>
+      <ul>
+        <li><strong>Fastest path from launch to useful browsing</strong> among the tested macOS browsers.</li>
+        <li><strong>Lowest shell overhead</strong> above the embedded engine.</li>
+        <li><strong>Competitive page-engine scores</strong> with the matching Chromium generation.</li>
+        <li><strong>Lower default page cost</strong> from blocking unnecessary requests.</li>
+        <li><strong>Bounded tab memory and background energy</strong> under realistic workloads.</li>
+      </ul>
+      <p>The website should say “fast in our test” or name the winning metric until Minimal has repeatable, same-machine evidence for anything broader.</p>
+    </section>
+
+    <section>
+      <h2>2. Current baseline</h2>
+      <table>
+        <thead><tr><th>Area</th><th>Measured today</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td>Initial renderer</td><td>684,650 B raw; 121,461 B gzip</td><td>Reasonable for React, but shell cost can still fall.</td></tr>
+          <tr><td>Lazy authenticator</td><td>278,243 B raw; 62,399 B gzip</td><td>Correctly excluded from the initial chunk.</td></tr>
+          <tr><td>CSS</td><td>53,130 B raw; 9,104 B gzip</td><td>Current raw budget passes.</td></tr>
+          <tr><td>Main / preload</td><td>30.64 KB / 1.02 KB</td><td>Small; not the primary problem.</td></tr>
+          <tr><td>macOS arm64 DMG</td><td>137,041,046 B (about 131 MiB)</td><td>Mostly the Chromium/Electron runtime.</td></tr>
+          <tr><td>Landing page</td><td>40,395 B raw; about 9.7 KB gzip</td><td>Excellent starting point: no framework or third-party runtime.</td></tr>
+          <tr><td>EasyList/EasyPrivacy cache</td><td>95,895 hosts; 2.11 MB JSON</td><td>Large enough that request-time algorithm choice matters.</td></tr>
+          <tr><td>Blocker non-match lookup</td><td>2.36–2.51 ms current; 0.0005–0.0020 ms label lookup prototype</td><td><span class="badge-high">P0 defect</span> The current scan is over 1,000× slower in this microbenchmark.</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Build, test, and bundle checks were run from the current worktree. Unit tests and production build passed. <code>npm run lint</code> is currently misconfigured: ESLint reports that all files under <code>src</code> are ignored.</p>
+
+      <h3>Exploratory runtime snapshot</h3>
+      <table>
+        <thead><tr><th>State</th><th>Process count</th><th>Summed RSS</th></tr></thead>
+        <tbody>
+          <tr><td>New-tab shell</td><td>4</td><td>404.1 MiB</td></tr>
+          <tr><td>1 local page</td><td>5</td><td>523.9 MiB</td></tr>
+          <tr><td>5 same-origin local pages</td><td>6</td><td>634.0 MiB</td></tr>
+          <tr><td>10 same-origin local pages</td><td>6</td><td>643.2 MiB</td></tr>
+        </tbody>
+      </table>
+      <p class="small">This is a development-Electron process-tree RSS snapshot, not private memory and not a market comparison. Chromium shares processes and memory, so RSS sums can double-count shared pages. Replace it with <code>app.getAppMetrics()</code>, OS private-memory sampling, controlled page origins, ten runs, and confidence intervals.</p>
+    </section>
+
+    <section>
+      <h2>3. The first performance fixes</h2>
+      <table>
+        <thead><tr><th>Priority</th><th>Change</th><th>Why</th><th>Acceptance evidence</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge-high">P0</span></td>
+            <td>Replace the per-request full suffix scan with host-label <code>Set.has</code> lookups.</td>
+            <td><code>hostIsBlocked</code> currently walks up to ~96k entries for every request.</td>
+            <td>100k-rule benchmark: median under 10 µs; exact-match and parent-suffix tests pass.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-high">P0</span></td>
+            <td>Add a 24-hour freshness policy, ETag/Last-Modified requests, schema version, and worker-thread parsing for EasyList caches.</td>
+            <td>Every new app session currently fetches, parses, deduplicates, and rewrites both lists.</td>
+            <td>Fresh cache performs no network refresh; first navigation never waits for parsing; durations exported.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-high">P0</span></td>
+            <td>Add performance marks and JSON export for process start, app ready, shell visible, omnibox usable, session ready, view creation, navigation commit, FCP, LCP, and load.</td>
+            <td>The current roadmap has prose goals but no reproducible measurements.</td>
+            <td>One command creates raw samples plus machine, OS, browser, engine, commit, rule-count, and cache metadata.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-medium">P1</span></td>
+            <td>Choose one state-delivery model, add revisions, suppress unchanged snapshots, and coalesce page metadata events.</td>
+            <td>Commands both return full state and trigger a full pushed state; navigation triggers more full updates.</td>
+            <td>No duplicate revision reaches the renderer; tab-switch latency improves or remains neutral.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-medium">P1</span></td>
+            <td>Batch layout IPC with <code>requestAnimationFrame</code>, skip identical bounds, and address the active view directly.</td>
+            <td>ResizeObserver and window resize can both send immediate layout updates, followed by a scan of every tab.</td>
+            <td>At most one bounds update per frame; no update for identical rounded geometry.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-medium">P1</span></td>
+            <td>Remove the unused tooltip provider and measure removing the guest MV3 authenticator extension.</td>
+            <td>The shell renders no tooltip component, and the extension popup is not exposed by Electron’s chrome.</td>
+            <td>Compressed entry falls without behavior loss; extension removal is kept only if memory/process count improves.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-medium">P1</span></td>
+            <td>Freeze, then discard eligible background tabs under pressure.</td>
+            <td>Every navigated tab stays live until closed.</td>
+            <td>10/20-tab private memory drops ≥25% versus optimized baseline; audible, form-dirty, download, WebRTC, and agent tabs are exempt.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Keep the existing security boundaries: sandboxed page contents, context isolation, no Node integration, shared ephemeral guest session, and lazy creation of page views.</p>
+    </section>
+
+    <section>
+      <h2>4. Browser benchmark program</h2>
+      <h3>Two tracks, because they answer different questions</h3>
+      <table>
+        <thead><tr><th>Track</th><th>Configuration</th><th>Question answered</th></tr></thead>
+        <tbody>
+          <tr><td>Engine parity</td><td>Clean profiles; blockers/extensions disabled; identical viewport and 60 Hz display.</td><td>Is Minimal’s embedded Chromium competitive with current Chromium, WebKit, and Gecko?</td></tr>
+          <tr><td>Product default</td><td>Every browser in its clean default state; Minimal’s built-in blocker remains enabled.</td><td>What experience does a user receive out of the box?</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><th>Dimension</th><th>Metric</th><th>Primary tool</th></tr></thead>
+        <tbody>
+          <tr><td>Web responsiveness</td><td>Score; higher is better</td><td><a href="https://browserbench.org/Speedometer3.1/about.html">Speedometer 3.1</a></td></tr>
+          <tr><td>JavaScript / Wasm</td><td>Total plus first/worst/average diagnostics</td><td><a href="https://browserbench.org/announcements/jetstream3/">JetStream 3.0</a></td></tr>
+          <tr><td>Graphics</td><td>Score and confidence interval at fixed 60 Hz</td><td><a href="https://browserbench.org/MotionMark1.3.1/about.html">MotionMark 1.3.1</a></td></tr>
+          <tr><td>Cold/warm launch</td><td>Spawn → visible shell; spawn → focused usable omnibox</td><td>External timer plus internal marks</td></tr>
+          <tr><td>Navigation</td><td>Enter → response start, commit, FCP, LCP, load</td><td>Deterministic local corpus / WebPageReplay</td></tr>
+          <tr><td>Tab switching</td><td>Shortcut input → first presented frame</td><td>Instrumented test harness</td></tr>
+          <tr><td>Memory</td><td>Private memory and process count at 1/5/10/20 tabs</td><td>OS sampling plus Electron app metrics</td></tr>
+          <tr><td>Background efficiency</td><td>CPU time, wakeups, and energy over a fixed idle/workload window</td><td>macOS Instruments / powermetrics runner</td></tr>
+          <tr><td>Default page cost</td><td>Requests and transferred bytes avoided; blocker hook latency</td><td>Network log plus blocker benchmark</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Market context available today</h3>
+      <table>
+        <thead><tr><th>Browser / source</th><th>Published result</th><th>How to use it</th></tr></thead>
+        <tbody>
+          <tr><td>Chrome, Google test, June 2026</td><td>Speedometer 3.1: 61; JetStream 3: 469 on an M5 MacBook Pro</td><td>Orientation only. <a href="https://blog.google/chromium/a-double-victory-for-web-speed-chrome-breaks-records-again-on-speedometer-31-and-jetstream-3/">Vendor source</a>.</td></tr>
+          <tr><td>Safari, WebKit test, March 2026</td><td>JetStream 3: 395 on macOS 26.4 on an M4 MacBook Air</td><td>Orientation only. Different hardware means 395 must not be ranked against Chrome’s 469. <a href="https://webkit.org/blog/17899/introducing-the-jetstream-3-benchmark-suite/">Vendor source</a>.</td></tr>
+          <tr><td>Minimal</td><td>Same-machine BrowserBench scores: not measured yet</td><td>Do not publish a winner until the controlled matrix is complete.</td></tr>
+        </tbody>
+      </table>
+      <p>There is no credible current published table covering all major browsers on identical hardware. The local comparison should begin with the browsers already present: Chrome 151, Safari 26.6, Firefox 153, and Minimal on Electron 43.4.1 / Chromium 150. Record exact versions on every run; Minimal is presently one Chromium milestone behind local Chrome.</p>
+
+      <h3>Protocol</h3>
+      <ol>
+        <li>Use one plugged-in Mac, Low Power Mode off, fixed 60 Hz, identical fullscreen viewport, and clean profiles.</li>
+        <li>Pin/self-host exact benchmark versions. Never compare different Speedometer, JetStream, or MotionMark versions.</li>
+        <li>Randomize browser order and allow thermal recovery.</li>
+        <li>Run ten independently restarted samples per browser and test.</li>
+        <li>Report median, p25–p75, bootstrap 95% confidence interval, raw JSON, hardware, OS, browser, engine, settings, date, and commit.</li>
+        <li>Initially fail release gates only on a statistically supported &gt;5% latency/score regression or &gt;10% memory regression; tighten after variance is understood.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>5. Rewrite decision</h2>
+      <table>
+        <thead><tr><th>Path</th><th>Expected upside</th><th>Cost / risk</th><th>Decision</th></tr></thead>
+        <tbody>
+          <tr><td>Optimize Electron + WebContentsView</td><td>Large real-world gain from blocker, cache, state, layout, and tab work; full Chromium compatibility.</td><td>Low–medium.</td><td><span class="badge-low">Do now</span></td></tr>
+          <tr><td>Electron + vanilla TypeScript shell</td><td>Smaller shell and less hydration.</td><td>Page engine unchanged; Chromium startup dominates.</td><td>Prototype only if profiling shows React on the critical path.</td></tr>
+          <tr><td>Native Swift + WKWebView</td><td>Potentially much smaller installer and lower macOS startup, memory, and energy.</td><td>WebKit compatibility; content blocking, downloads, permissions, and browser behaviors must be rebuilt; macOS-only.</td><td><span class="badge-medium">Best rewrite experiment</span></td></tr>
+          <tr><td>Tauri + WKWebView</td><td>Smaller wrapper and Rust control plane.</td><td>Remote-content browser security and multi-tab browser APIs remain awkward; direct Swift is simpler for a Mac-only product.</td><td>Secondary option.</td></tr>
+          <tr><td>CEF / native Chromium shell</td><td>Removes Node/React wrapper overhead.</td><td>Still ships Chromium and inherits heavy packaging, patching, and security maintenance.</td><td>Reject for speed alone.</td></tr>
+          <tr><td>Fork/custom rendering engine</td><td>Maximum control.</td><td>Standards, compatibility, security, sandboxing, and continuous engine maintenance become the product.</td><td><span class="badge-high">Reject</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>WKWebView experiment gate</h3>
+      <p>Create a separate, disposable proof of concept after Phase 2. It needs only ephemeral browsing, omnibox, tabs, navigation, content blocking, downloads, and the same local benchmark hooks. Keep it only if it achieves all of the following against optimized Electron on the same machine:</p>
+      <ul>
+        <li>At least 25% faster median cold launch to usable omnibox.</li>
+        <li>At least 30% lower private memory at one and ten controlled tabs.</li>
+        <li>Meaningfully lower idle energy and a substantially smaller signed installer.</li>
+        <li>No critical failures in the defined compatibility corpus.</li>
+        <li>A credible security/update plan for macOS releases.</li>
+      </ul>
+      <p>If it fails any hard gate, delete the experiment and continue with Electron. A rendering-core rewrite is out of scope: Minimal wins by reducing browser overhead, not by trying to outstaff Chromium, WebKit, or Gecko.</p>
+    </section>
+
+    <section>
+      <h2>6. Website enhancement plan</h2>
+      <p><strong>Evidence limit:</strong> this is source-backed inspection, not a complete visual audit. The required in-app screenshot runtime failed its trusted-path setup, so no screenshot is being presented as evidence.</p>
+      <table>
+        <thead><tr><th>Step</th><th>Current health</th><th>Highest-impact change</th></tr></thead>
+        <tbody>
+          <tr><td>1. Landing / hero</td><td><span class="badge-medium">Needs proof</span></td><td>Keep the concise promise, but add one verified speed result and an honest “macOS Apple Silicon, unsigned beta” label.</td></tr>
+          <tr><td>2. OS / install selector</td><td><span class="badge-medium">Misleading states</span></td><td>Mark Windows/Linux “coming soon” before selection; implement the ARIA tabs keyboard model or use pressed buttons.</td></tr>
+          <tr><td>3. Product preview</td><td><span class="badge-high">Weak evidence</span></td><td>Replace the CSS-drawn mock with a real current-build screenshot and an accessible short launch-to-page clip.</td></tr>
+          <tr><td>4. Feature education</td><td><span class="badge-medium">Clear but overclaimed</span></td><td>Change “never load” to “blocks common ads and trackers by default” unless coverage testing supports the absolute claim.</td></tr>
+          <tr><td>5. Shortcuts / footer</td><td><span class="badge-low">Generally healthy</span></td><td>Add release notes, privacy/security model, limitations, checksums, and install help without making the page heavy.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Recommended page order</h3>
+      <ol>
+        <li>Hero with supported-platform badge and honest CTA.</li>
+        <li>Real product screenshot or launch clip.</li>
+        <li>Benchmark scorecard with methodology and raw-results link.</li>
+        <li>Three focused differentiators: low-distraction shell, default blocking, ephemeral sessions.</li>
+        <li>Privacy and security model, including what is and is not persisted.</li>
+        <li>Install steps, system requirements, signing/notarization status, checksum, and release notes.</li>
+        <li>Keyboard shortcuts and footer.</li>
+      </ol>
+
+      <h3>Site quality fixes</h3>
+      <ul>
+        <li>Preserve the self-contained page and ~9.7 KB gzip baseline.</li>
+        <li>Resize the ~930 KB touch icon to its actual display dimensions.</li>
+        <li>Add explicit <code>:focus-visible</code> rings, a skip link and <code>&lt;main&gt;</code>, stronger small-text contrast, and correct tabs semantics.</li>
+        <li>Make reveal content visible by default and add animation only after a JavaScript capability class is active.</li>
+        <li>Report clipboard failure instead of treating rejection as success.</li>
+        <li>Add CSP, <code>nosniff</code>, referrer policy, compression verification, and immutable caching for versioned assets.</li>
+        <li>Gate releases with five Lighthouse desktop/mobile runs, median reporting, and retained reports; use field Core Web Vitals only after sufficient traffic exists.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. Delivery roadmap</h2>
+      <table>
+        <thead><tr><th>Phase</th><th>Scope</th><th>Exit criteria</th></tr></thead>
+        <tbody>
+          <tr><td>0 · Baseline (week 1)</td><td>Fix ESLint configuration; add benchmark CLI, marks, metadata, raw JSON, bundle compression budgets, deterministic fixtures.</td><td>One reproducible command; 10-run baseline committed as CI artifact, not hand-written prose.</td></tr>
+          <tr><td>1 · Hot path (weeks 1–2)</td><td>Blocker suffix lookup, cache TTL/validators, worker parsing, regression benchmark.</td><td>Lookup median &lt;10 µs; fresh-cache start performs no list fetch; no blocker correctness regression.</td></tr>
+          <tr><td>2 · Shell and tabs (weeks 2–4)</td><td>State revisions/deltas, layout batching, tooltip removal, extension measurement, background freeze/discard.</td><td>Cold/usable and 1/10-tab memory improve against Phase 0 with confidence intervals; security settings unchanged.</td></tr>
+          <tr><td>3 · Market benchmark + site (week 4)</td><td>Controlled Chrome/Safari/Firefox/Minimal suite; publish methodology, raw results, real product media, trust and accessibility fixes.</td><td>No cross-machine comparison; all claims include machine, date, versions, settings, runs, and uncertainty.</td></tr>
+          <tr><td>4 · WKWebView spike (weeks 5–6)</td><td>Bounded native prototype using the same workload and measurement schema.</td><td>Keep/reject decision against the explicit startup, memory, energy, compatibility, and security gates.</td></tr>
+          <tr><td>5 · Release discipline (ongoing)</td><td>Nightly dedicated-Mac benchmark; Electron/Chromium currency; signed/notarized builds; updater after first usable paint.</td><td>Performance regressions block releases; raw evidence stays attached to each release.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>8. First implementation slice</h2>
+      <ol>
+        <li>Add a failing performance test around a 100k-rule non-match.</li>
+        <li>Implement label-based suffix lookup without changing blocking semantics.</li>
+        <li>Add cache metadata and prevent refresh when fresh.</li>
+        <li>Add startup/navigation marks and a JSON result schema.</li>
+        <li>Repair ESLint so the release gate actually checks source.</li>
+        <li>Run the full unit/build/bundle suite and record the new local baseline.</li>
+      </ol>
+      <blockquote>This slice is small enough to review, directly attacks the proven hot path, and creates the evidence needed for every later architecture decision.</blockquote>
+    </section>
+
+    <section>
+      <h2>Sources and code evidence</h2>
+      <ul>
+        <li><code>src/main/blocklist.ts</code> — current suffix scan and EasyList parser.</li>
+        <li><code>src/main/adblock.ts</code> — request interception, cache hydration, and unconditional refresh.</li>
+        <li><code>src/main/tabs.ts</code> — session setup, view lifecycle, full-state events, and persistent live tabs.</li>
+        <li><code>src/components/mini-app.tsx</code> — lazy authenticator, layout IPC, and shell provider.</li>
+        <li><code>website/index.html</code> and <code>website/server.ts</code> — page claims, install flow, semantics, assets, and response headers.</li>
+        <li><a href="https://browserbench.org/Speedometer3.1/about.html">Speedometer 3.1 methodology</a>, <a href="https://browserbench.org/JetStream/in-depth.html">JetStream scoring</a>, and <a href="https://browserbench.org/MotionMark1.3.1/about.html">MotionMark methodology</a>.</li>
+        <li><a href="https://releases.electronjs.org/release/v43.4.1">Electron 43.4.1 release record</a>.</li>
+        <li><a href="https://web.dev/articles/vitals">Core Web Vitals thresholds and guidance</a>.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

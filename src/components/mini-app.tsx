@@ -14,9 +14,11 @@ import { SettingsPanel } from "@/components/settings-panel";
 import { StartPage } from "@/components/start-page";
 import { TabStrip } from "@/components/tab-strip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WebAuthnAccountDialog } from "@/components/webauthn-account-dialog";
 import { useMiniBrowser } from "@/hooks/use-mini-browser";
 import { useBookmarks } from "@/lib/bookmarks";
 import { readSession, saveSession, useSettings } from "@/lib/settings";
+import { migrateLegacyAuthenticatorStorage } from "@/lib/legacy-vault-migration";
 import type { BrowserCommand, LayoutRect } from "@/lib/types";
 
 export function MiniApp() {
@@ -119,6 +121,14 @@ export function MiniApp() {
   useEffect(() => {
     window.mini?.persistSession(settings.persistSession);
   }, [settings.persistSession]);
+
+  useEffect(() => {
+    const vault = window.mini?.vault;
+    if (!vault) return;
+    void vault.status().then((status) => {
+      if (status.available) return migrateLegacyAuthenticatorStorage(vault);
+    });
+  }, []);
 
   // Keep the native caption buttons on the same surface the renderer shows.
   useEffect(() => {
@@ -281,7 +291,6 @@ export function MiniApp() {
               authenticatorOpen={authenticatorOpen}
               tabPosition={settings.tabPosition}
               bookmarked={activeSaved}
-              favoritesMode={favoritesMode}
               onSelect={(id) => dispatch({ type: "switchTab", id })}
               onClose={(id) => dispatch({ type: "closeTab", id })}
               onNew={() => dispatch({ type: "newTab" })}
@@ -370,7 +379,10 @@ export function MiniApp() {
                   <Suspense
                     fallback={<div className="mini-sheet-loading">Loading authenticator…</div>}
                   >
-                    <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+                    <AuthenticatorPanel
+                      activeUrl={activeTab?.url ?? ""}
+                      onClose={() => setAuthenticatorOpen(false)}
+                    />
                   </Suspense>
                 ) : null}
                 {settingsOpen ? (
@@ -393,6 +405,18 @@ export function MiniApp() {
             ) : null}
           </div>
         </div>
+        {state.webAuthnPrompt ? (
+          <WebAuthnAccountDialog
+            prompt={state.webAuthnPrompt}
+            onSelect={(credentialId) =>
+              dispatch({
+                type: "selectWebAuthnAccount",
+                requestId: state.webAuthnPrompt!.requestId,
+                credentialId,
+              })
+            }
+          />
+        ) : null}
       </div>
     </TooltipProvider>
   );

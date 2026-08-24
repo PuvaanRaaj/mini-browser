@@ -43,6 +43,19 @@ export type BrowserState = {
   error: string | null;
   extensionLoaded: boolean;
   adblockEnabled: boolean;
+  webAuthnPrompt: WebAuthnPrompt | null;
+};
+
+export type WebAuthnAccountChoice = {
+  credentialId: string;
+  name: string;
+  displayName: string;
+};
+
+export type WebAuthnPrompt = {
+  requestId: string;
+  relyingPartyId: string;
+  accounts: WebAuthnAccountChoice[];
 };
 
 export type BrowserCommand =
@@ -58,6 +71,7 @@ export type BrowserCommand =
   | { type: "zoomIn" }
   | { type: "zoomOut" }
   | { type: "zoomReset" }
+  | { type: "selectWebAuthnAccount"; requestId: string; credentialId: string | null }
   | { type: "resetSession" };
 
 export type LayoutRect = {

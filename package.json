@@ -1,6 +1,6 @@
 {
   "name": "minimal-browser",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": false,
   "license": "Apache-2.0",
   "description": "Minimal — a personal Chromium browser, with focus mode and a built-in TOTP authenticator.",
@@ -10,20 +10,23 @@
     "url": "https://github.com/PuvaanRaaj/mini-browser.git"
   },
   "engines": {
-    "bun": ">=1.4.0"
+    "node": ">=22.0.0"
   },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "check:bundle": "node scripts/check-bundle.mjs",
+    "benchmark": "electron-vite build && node scripts/benchmark.mjs",
+    "benchmark:market": "node scripts/benchmark-market.mjs",
     "dist": "electron-vite build && electron-builder",
-    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:mac": "node scripts/prepare-mac-entitlements.mjs && electron-vite build && electron-builder --mac",
     "open:mac": "node scripts/open-mac.mjs",
     "site": "bun website/server.ts",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "electron-vite preview",
-    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts",
+    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts && npx tsx src/main/security.test.ts && npx tsx src/main/oauth.test.ts && npx tsx src/main/webauthn.test.ts && npx tsx src/main/vault.test.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "dist:win": "electron-vite build && electron-builder --win"
   },
@@ -52,6 +55,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5",
+    "typescript-eslint": "^8.67.0",
     "vite": "^7.3.6"
   },
   "build": {
@@ -77,9 +81,16 @@
         "dmg",
         "zip"
       ],
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "identity": null,
+      "entitlements": ".build/entitlements.mac.plist",
+      "entitlementsInherit": ".build/entitlements.mac.plist",
+      "extraResources": [
+        {
+          "from": ".build/webauthn.json",
+          "to": "webauthn.json"
+        }
+      ],
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
     },
     "dmg": {

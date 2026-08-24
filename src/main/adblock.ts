@@ -10,12 +10,23 @@ import {
   parseEasyListHosts,
 } from "./blocklist";
 
+// Bump when the parser's rule acceptance changes so stale caches written by
+// older, buggier parsers (e.g. one that blocked all of x.com from a
+// ||x.com^*/log.json rule) are discarded instead of reused.
+const CACHE_VERSION = 2;
 const CACHE_FILE = "easylist-hosts.json";
 
 export async function enableAdblock(ses: Session): Promise<boolean> {
   const blocked = new Set<string>(BLOCKED_HOST_SUFFIXES);
 
   ses.webRequest.onBeforeRequest({ urls: ["*://*/*"] }, (details, callback) => {
+    // Hostname blocking is for subresources only. Cancelling main frames would
+    // let one bad list entry take down a whole page, so navigation always
+    // passes through here untouched.
+    if (details.resourceType === "mainFrame") {
+      callback({});
+      return;
+    }
     try {
       const host = new URL(details.url).hostname;
       callback({ cancel: hostIsBlocked(host, blocked) });
@@ -59,7 +70,10 @@ async function readCachedHosts(): Promise<string[]> {
   try {
     const raw = await readFile(cachePath(), "utf8");
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return [];
+    const record = parsed as { version?: unknown; hosts?: unknown };
+    if (record.version !== CACHE_VERSION || !Array.isArray(record.hosts)) return [];
+    return record.hosts.filter((item): item is string => typeof item === "string");
   } catch {
     return [];
   }
@@ -68,7 +82,7 @@ async function readCachedHosts(): Promise<string[]> {
 async function writeCachedHosts(hosts: string[]): Promise<void> {
   try {
     await mkdir(app.getPath("userData"), { recursive: true });
-    await writeFile(cachePath(), JSON.stringify(hosts));
+    await writeFile(cachePath(), JSON.stringify({ version: CACHE_VERSION, hosts }));
   } catch {
     // Cache is optional.
   }

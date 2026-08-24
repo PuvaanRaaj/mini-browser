@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Chromium Security, Authentication, and Performance Goal Plan</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           max-width: 960px; margin: 40px auto; padding: 0 24px;
+           color: #1a1a1a; line-height: 1.6; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h2 { font-size: 1.3rem; margin-top: 2em; color: #0066cc; }
+    h3 { font-size: 1.05rem; margin-top: 1.5em; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: #f0f4ff; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px;
+           font-family: 'SF Mono', Consolas, monospace; font-size: 0.9em; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px;
+          overflow-x: auto; font-size: 0.875rem; line-height: 1.5; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .badge-high { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-medium { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-low { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    blockquote { border-left: 4px solid #0066cc; margin: 0; padding: 8px 16px; background: #f0f4ff; color: #333; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 4px 0; }
+    .meta { color: #666; font-size: 0.85em; margin-bottom: 2em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Minimal Chromium Security, Authentication, and Performance Goal Plan</h1>
+    <p class="meta">24 August 2026 · Author: Puvaan · Repository: <code>PuvaanRaaj/mini-browser</code></p>
+  </header>
+
+  <blockquote>
+    <strong>Decision:</strong> shelf the native Rust rewrite for now. PR #4 remains a draft and its branch is preserved as a future migration/reference point. The active product is the existing Electron/Chromium app.
+  </blockquote>
+
+  <section>
+    <h2>Outcome</h2>
+    <p>Make the current Chromium app fast enough to feel immediate, secure enough for daily browsing, and capable of Google sign-in, passkeys, and a local password manager without storing secrets in the renderer.</p>
+    <p>The target is staged delivery with measurable gates. “Fast” never permits disabling Chromium security, sandboxing, certificate checks, or origin isolation.</p>
+  </section>
+
+  <section>
+    <h2>Current findings</h2>
+    <table>
+      <thead><tr><th>Area</th><th>Current state</th><th>Required change</th></tr></thead>
+      <tbody>
+        <tr><td>Native rewrite</td><td>Large Rust branch and PR #4 exist, but parity and signed-release work are incomplete.</td><td>Keep PR #4 draft; no merge or cutover.</td></tr>
+        <tr><td>Remote renderer</td><td><code>nodeIntegration: false</code> and <code>contextIsolation: true</code> are present. The main app renderer is still configured with <code>sandbox: false</code>, and IPC sender validation is not yet enforced.</td><td>Enable sandbox where supported, validate every privileged IPC sender, and add regression tests.</td></tr>
+        <tr><td>Profiles and sign-in</td><td>Tabs use a non-persistent partition, so cookies and Google sessions disappear on reset/launch.</td><td>Add an explicit user-selected persistent profile; keep private/ephemeral mode as the default.</td></tr>
+        <tr><td>Authenticator data</td><td>TOTP secrets are currently held in renderer <code>localStorage</code>.</td><td>Migrate secrets to a main-process vault backed by OS encryption; keep only redacted account metadata in the renderer.</td></tr>
+        <tr><td>Passkeys</td><td>Electron exposes <code>configureWebAuthn</code>; macOS also needs a matching signed keychain entitlement. Windows and account-selection flows need acceptance tests.</td><td>Wire platform authenticators, account selection, signing entitlements, and recovery/error states.</td></tr>
+        <tr><td>Google</td><td>Embedded Electron identity tokens can be rejected by Google’s “browser not secure” policy.</td><td>Use system-browser OAuth with PKCE for app-owned sign-in. Do not promise that a user-agent spoof will bypass Google policy for every web flow.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Delivery phases</h2>
+    <table>
+      <thead><tr><th>Phase</th><th>Scope</th><th>Exit gate</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td>0. Baseline</td><td>Pin a current Electron/Chromium release, capture startup, first navigation, reload, memory, CPU, and bundle-size baselines.</td><td>Repeatable benchmark script and before/after report on macOS and Windows.</td><td><span class="badge-low">Low</span></td></tr>
+        <tr><td>1. Security boundary</td><td>Sandbox all eligible renderers; keep isolation and Node disabled; validate IPC senders; restrict navigation/window creation; deny permissions by default; add local UI CSP and Electron fuses; keep HTTPS-only remote navigation.</td><td>Automated security checks plus manual hostile-page tests; no privileged API exposed to remote content.</td><td><span class="badge-high">High</span></td></tr>
+        <tr><td>2. Profiles and Google</td><td>Introduce private ephemeral mode and opt-in persistent profile. For app-owned Google login use system browser + loopback/custom-scheme callback, state/PKCE, exact redirect allowlist, and one-time code exchange.</td><td>Google test account completes sign-in; state mismatch, replay, open-redirect, and cancellation tests fail closed.</td><td><span class="badge-high">High</span></td></tr>
+        <tr><td>3. Passkeys</td><td>Configure macOS Touch ID/Secure Enclave with the signed keychain group; handle <code>select-webauthn-account</code>; exercise Windows Hello and roaming security keys; make the profile identity stable when persistence is enabled.</td><td>Passkey registration and sign-in pass on Google, GitHub, and a local WebAuthn fixture on macOS and Windows.</td><td><span class="badge-high">High</span></td></tr>
+        <tr><td>4. Password manager</td><td>Build a versioned main-process vault. Use Electron asynchronous <code>safeStorage</code> for the vault key/data, fail closed when encryption is unavailable, lock on timeout/quit, require explicit user gesture for fill/copy, and match exact origin plus field context.</td><td>Secrets never appear in renderer storage, logs, URLs, IPC errors, screenshots, or crash reports. Lock, unlock, backup, restore, deletion, and migration tests pass.</td><td><span class="badge-high">High</span></td></tr>
+        <tr><td>5. Performance</td><td>Defer ad-block list parsing, reuse session/network caches safely, avoid synchronous disk work, coalesce state updates, bound tab resources, and measure renderer/GPU behavior before changing switches.</td><td>Improvement is shown on cold start, warm start, first contentful paint, navigation, memory per tab, and 10-tab idle CPU, with no security regression.</td><td><span class="badge-medium">Medium</span></td></tr>
+        <tr><td>6. Release</td><td>Ship small PRs, signed macOS/Windows artifacts, rollback notes, migration prompts, and an update path. Keep Rust draft untouched until Chromium parity and performance gates are met.</td><td>UAT matrix green on macOS Apple silicon, macOS Intel/T2 where available, Windows x64, and Windows ARM64.</td><td><span class="badge-medium">Medium</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Non-negotiable security rules</h2>
+    <ul>
+      <li>Never store password, TOTP, OAuth refresh, or passkey secrets in <code>localStorage</code>, renderer memory longer than needed, URLs, logs, or telemetry.</li>
+      <li>Never expose a general-purpose IPC channel, Node API, filesystem API, or shell API to remote pages.</li>
+      <li>Do not silently make the browser persistent. The user chooses private or persistent profile mode, with a clear reset/delete action.</li>
+      <li>Do not use a fake user agent as the authentication strategy. Google policy can change; system-browser OAuth is the reliable app-login path.</li>
+      <li>If <code>safeStorage</code> reports an unprotected backend, refuse to create or unlock the vault rather than silently storing plaintext.</li>
+      <li>Use OS credential providers for passkeys; do not implement a home-grown WebAuthn or password-encryption scheme.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>First implementation slice</h2>
+    <ol>
+      <li>Keep PR #4 draft and create the Chromium hardening branch from the current Electron worktree without discarding its uncommitted fixes.</li>
+      <li>Add sender validation and sandbox/security regression tests before adding any credential API.</li>
+      <li>Move TOTP persistence behind a main-process vault interface, with an explicit migration from the existing renderer storage.</li>
+      <li>Add the profile-mode model and only then implement Google OAuth and passkey persistence.</li>
+      <li>Run the benchmark suite and browser acceptance matrix for every subsequent PR.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>References</h2>
+    <ul>
+      <li><a href="https://www.electronjs.org/docs/latest/tutorial/security">Electron security recommendations</a></li>
+      <li><a href="https://www.electronjs.org/docs/latest/api/safe-storage">Electron safeStorage</a></li>
+      <li><a href="https://www.electronjs.org/docs/latest/api/app#appconfigurewebauthnoptions-macos">Electron configureWebAuthn</a></li>
+      <li><a href="https://www.electronjs.org/docs/latest/api/session#event-select-webauthn-account">Electron WebAuthn account selection</a></li>
+    </ul>
+  </section>
+</body>
+</html>

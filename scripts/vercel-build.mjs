@@ -7,7 +7,7 @@ const output = join(root, "public");
 const packageJson = JSON.parse(
   await readFile(join(root, "package.json"), "utf8"),
 );
-const version = packageJson.version ?? "0.1.0";
+const version = packageJson.version ?? "1.0.0";
 const siteUrl = (process.env.SITE_URL ?? "https://mini-browser-v2.vercel.app").replace(/\/$/, "");
 const hydrate = (value) =>
   value

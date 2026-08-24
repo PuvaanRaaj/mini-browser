@@ -8,6 +8,10 @@ assert.equal(resolveNavigation("127.0.0.1:3000/test"), "http://127.0.0.1:3000/te
 assert.equal(resolveNavigation("//example.com"), "https://example.com");
 assert.equal(resolveNavigation("example.com/docs"), "https://example.com/docs");
 assert.equal(resolveNavigation("electron browser"), "https://duckduckgo.com/?q=electron%20browser");
+assert.equal(resolveNavigation("file:///etc/passwd"), "");
+assert.equal(resolveNavigation("javascript:alert(1)"), "");
+assert.equal(resolveNavigation("data:text/html,hello"), "");
+assert.equal(resolveNavigation("about:blank"), "about:blank");
 assert.equal(resolveNavigation("   "), "");
 
 assert.equal(displayUrl(""), "");

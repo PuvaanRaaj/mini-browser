@@ -15,6 +15,12 @@ import { enableAdblock } from "./adblock";
 import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-error";
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
 import { hostnameOf, resolveNavigation } from "../lib/url";
+import {
+  chromiumUserAgent,
+  isAllowedExternalUrl,
+  isAllowedWebUrl,
+  rendererSandboxEnabled,
+} from "./security";
 
 const PERSISTENT_PARTITION = "persist:mini-signed-in";
 
@@ -78,6 +84,10 @@ export class MiniSession {
   private adblockEnabled = false;
   private zoomByHost = new Map<string, number>();
   private persistSession = false;
+  private webAuthnPrompt: BrowserState["webAuthnPrompt"] = null;
+  private pendingWebAuthn:
+    | { requestId: string; allowedIds: Set<string>; choose: (credentialId?: string | null) => void }
+    | null = null;
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
@@ -98,6 +108,7 @@ export class MiniSession {
       error: null,
       extensionLoaded: this.extensionLoaded,
       adblockEnabled: this.adblockEnabled,
+      webAuthnPrompt: this.webAuthnPrompt,
     };
   }
 
@@ -151,6 +162,9 @@ export class MiniSession {
       case "zoomReset":
         this.stepZoom(0, true);
         break;
+      case "selectWebAuthnAccount":
+        this.selectWebAuthnAccount(command.requestId, command.credentialId);
+        break;
       case "resetSession":
         await this.reset();
         break;
@@ -199,7 +213,35 @@ export class MiniSession {
     return image.toPNG();
   }
 
+  async fillPassword(entry: { origin: string; username: string; password: string }): Promise<void> {
+    const view = this.activeView();
+    if (!view) throw new Error("There is no active website to fill.");
+    const current = new URL(view.webContents.getURL());
+    if (current.protocol !== "https:" || current.origin !== entry.origin) {
+      throw new Error("This password belongs to a different website.");
+    }
+    const username = JSON.stringify(entry.username);
+    const password = JSON.stringify(entry.password);
+    await view.webContents.executeJavaScript(`(() => {
+      const passwordInput = document.querySelector('input[type="password"]');
+      if (!(passwordInput instanceof HTMLInputElement)) throw new Error("No password field found.");
+      const usernameInput = document.querySelector(
+        'input[autocomplete="username"], input[type="email"], input[name*="user" i], input[name*="email" i], input[type="text"]',
+      );
+      const setValue = (input, value) => {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        setter?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      if (usernameInput instanceof HTMLInputElement) setValue(usernameInput, ${username});
+      setValue(passwordInput, ${password});
+      passwordInput.focus();
+    })()`, true);
+  }
+
   destroy(): void {
+    this.cancelWebAuthnPrompt();
     for (const tab of this.tabs.values()) {
       this.destroyView(tab);
     }
@@ -215,8 +257,43 @@ export class MiniSession {
     this.guest = electronSession.fromPartition(
       this.persistSession ? PERSISTENT_PARTITION : `mini-${this.sessionId}`,
     );
+    this.guest.setPermissionCheckHandler(() => false);
     this.guest.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
-    this.guest.setUserAgent(this.guest.getUserAgent().replace(/Electron\/\S+\s/g, ""));
+    // Google refuses sign-ins from embedded browsers ("This browser or app may
+    // not be secure") when the UA carries tokens it does not recognise. Strip
+    // both the Electron token and the app token ("Minimal/x.y.z", which sits
+    // right before "Chrome/") so the UA matches the bundled Chromium exactly.
+    this.guest.setUserAgent(chromiumUserAgent(this.guest.getUserAgent()));
+    this.guest.on("select-webauthn-account", (_event, details, callback) => {
+      this.cancelWebAuthnPrompt();
+      if (!details.frame || details.accounts.length === 0) {
+        callback();
+        return;
+      }
+
+      const requestId = randomUUID();
+      let answered = false;
+      const choose = (credentialId?: string | null) => {
+        if (answered) return;
+        answered = true;
+        callback(credentialId);
+      };
+      this.pendingWebAuthn = {
+        requestId,
+        allowedIds: new Set(details.accounts.map((account) => account.credentialId)),
+        choose,
+      };
+      this.webAuthnPrompt = {
+        requestId,
+        relyingPartyId: details.relyingPartyId,
+        accounts: details.accounts.map((account) => ({
+          credentialId: account.credentialId,
+          name: account.name ?? "Passkey account",
+          displayName: account.displayName ?? account.name ?? "Passkey account",
+        })),
+      };
+      this.onState();
+    });
     const session = this.guest;
     this.adblockEnabled = await enableAdblock(session);
     const sessionId = this.sessionId;
@@ -278,7 +355,7 @@ export class MiniSession {
         session: ses,
         // WSL2 kernels reject the shared-memory calls Chromium's renderer sandbox
         // needs, which crashes every tab. Keep the sandbox everywhere else.
-        sandbox: process.platform !== "linux",
+        sandbox: rendererSandboxEnabled(),
         contextIsolation: true,
         nodeIntegration: false,
       },
@@ -293,13 +370,19 @@ export class MiniSession {
   private bind(tab: TabRecord, view: WebContentsView): void {
     const wc = view.webContents;
     wc.setWindowOpenHandler(({ url }) => {
-      if (/^https?:/i.test(url)) {
+      if (isAllowedWebUrl(url)) {
         const tab = this.createStartTab(true);
         void this.navigate(url, tab.id);
-      } else {
+      } else if (isAllowedExternalUrl(url)) {
         void shell.openExternal(url);
       }
       return { action: "deny" };
+    });
+    wc.on("will-navigate", (details) => {
+      if (!isAllowedWebUrl(details.url)) details.preventDefault();
+    });
+    wc.on("will-redirect", (details) => {
+      if (details.isMainFrame && !isAllowedWebUrl(details.url)) details.preventDefault();
     });
     wc.on("page-favicon-updated", (_event, icons) => {
       void this.captureFavicon(tab, icons);
@@ -365,6 +448,7 @@ export class MiniSession {
   }
 
   private async reset(): Promise<void> {
+    this.cancelWebAuthnPrompt();
     // An in-memory partition disappears on its own; a persistent one has to be
     // wiped, or "Reset Session" would quietly keep every cookie.
     if (this.persistSession && this.guest) {
@@ -382,6 +466,22 @@ export class MiniSession {
     this.adblockEnabled = false;
     this.sessionId = randomUUID();
     this.createStartTab(true);
+  }
+
+  private selectWebAuthnAccount(requestId: string, credentialId: string | null): void {
+    const pending = this.pendingWebAuthn;
+    if (!pending || pending.requestId !== requestId) return;
+    const selected = credentialId && pending.allowedIds.has(credentialId) ? credentialId : null;
+    this.pendingWebAuthn = null;
+    this.webAuthnPrompt = null;
+    pending.choose(selected);
+  }
+
+  private cancelWebAuthnPrompt(): void {
+    const pending = this.pendingWebAuthn;
+    this.pendingWebAuthn = null;
+    this.webAuthnPrompt = null;
+    pending?.choose(null);
   }
 
   private destroyView(tab: TabRecord): void {
@@ -724,7 +824,7 @@ async function loadAuthenticatorExtension(ses: Session): Promise<boolean> {
       ? join(process.resourcesPath, "extension")
       : join(process.cwd(), "extension");
   try {
-    await ses.loadExtension(dir, { allowFileAccess: true });
+    await ses.extensions.loadExtension(dir, { allowFileAccess: true });
     return true;
   } catch {
     return false;
