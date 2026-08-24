@@ -39,4 +39,3 @@ export function chromiumUserAgent(value: string): string {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
-

@@ -34,4 +34,3 @@ assert.equal(rendererSandboxEnabled("darwin", {}), true);
 assert.equal(rendererSandboxEnabled("win32", {}), true);
 
 console.log("security tests passed");
-
