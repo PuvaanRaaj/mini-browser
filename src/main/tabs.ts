@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -13,7 +14,48 @@ import {
 import { enableAdblock } from "./adblock";
 import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-error";
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
-import { resolveNavigation } from "../lib/url";
+import { hostnameOf, resolveNavigation } from "../lib/url";
+
+const PERSISTENT_PARTITION = "persist:mini-signed-in";
+
+function hostOf(url: string): string {
+  return hostnameOf(url);
+}
+
+/**
+ * Trust the bytes over the header. Plenty of servers hand back .ico as
+ * application/octet-stream or with no type at all, and a login redirect arrives
+ * as perfectly valid text/html.
+ */
+function imageTypeOf(bytes: Buffer, headerType: string | null): string | null {
+  if (bytes.length >= 8 && bytes.subarray(0, 8).toString("hex") === "89504e470d0a1a0a") {
+    return "image/png";
+  }
+  if (bytes.length >= 4 && bytes.subarray(0, 4).toString("hex") === "00000100") {
+    return "image/x-icon";
+  }
+  if (bytes.length >= 3 && bytes.subarray(0, 3).toString("hex") === "ffd8ff") {
+    return "image/jpeg";
+  }
+  if (bytes.length >= 6 && bytes.subarray(0, 6).toString("ascii") === "GIF89a") {
+    return "image/gif";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+    bytes.subarray(8, 12).toString("ascii") === "WEBP"
+  ) {
+    return "image/webp";
+  }
+
+  const head = bytes.subarray(0, 256).toString("utf8").trimStart().toLowerCase();
+  if (head.startsWith("<svg") || head.startsWith("<?xml")) return "image/svg+xml";
+  // An HTML login page is the usual disguise; never inline that as an icon.
+  if (head.startsWith("<!doctype html") || head.startsWith("<html")) return null;
+
+  const declared = (headerType ?? "").split(";")[0].trim();
+  return declared.startsWith("image/") ? declared : null;
+}
 
 type TabRecord = {
   id: string;
@@ -34,12 +76,16 @@ export class MiniSession {
   private guest: Session | null = null;
   private extensionLoaded = false;
   private adblockEnabled = false;
+  private zoomByHost = new Map<string, number>();
+  private persistSession = false;
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
     private readonly window: BrowserWindow,
     private readonly onState: () => void,
   ) {
+    void this.loadZoomLevels();
+    void this.loadPersistSession();
     this.createStartTab(true);
   }
 
@@ -92,6 +138,18 @@ export class MiniSession {
         break;
       case "switchTab":
         this.switchTab(command.id);
+        break;
+      case "moveTab":
+        this.moveTab(command.id, command.toIndex);
+        break;
+      case "zoomIn":
+        this.stepZoom(1);
+        break;
+      case "zoomOut":
+        this.stepZoom(-1);
+        break;
+      case "zoomReset":
+        this.stepZoom(0, true);
         break;
       case "resetSession":
         await this.reset();
@@ -151,7 +209,12 @@ export class MiniSession {
 
   private async guestSession(): Promise<Session> {
     if (this.guest) return this.guest;
-    this.guest = electronSession.fromPartition(`mini-${this.sessionId}`);
+    // "persist:" is what makes Chromium write the profile to disk. Without it
+    // the partition lives in memory and dies with the window, which is the
+    // default and the whole point of this browser.
+    this.guest = electronSession.fromPartition(
+      this.persistSession ? PERSISTENT_PARTITION : `mini-${this.sessionId}`,
+    );
     this.guest.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     this.guest.setUserAgent(this.guest.getUserAgent().replace(/Electron\/\S+\s/g, ""));
     const session = this.guest;
@@ -239,7 +302,7 @@ export class MiniSession {
       return { action: "deny" };
     });
     wc.on("page-favicon-updated", (_event, icons) => {
-      void this.captureFavicon(tab, icons[0]);
+      void this.captureFavicon(tab, icons);
     });
 
     wc.on("page-title-updated", (_event, title) => {
@@ -259,6 +322,8 @@ export class MiniSession {
     wc.on("did-navigate", (_event, url) => {
       tab.favicon = null;
       tab.url = url;
+      this.applyZoom(tab);
+      if (!tab.favicon) void this.captureFavicon(tab, []);
       tab.isStartPage = false;
       this.onState();
     });
@@ -300,6 +365,15 @@ export class MiniSession {
   }
 
   private async reset(): Promise<void> {
+    // An in-memory partition disappears on its own; a persistent one has to be
+    // wiped, or "Reset Session" would quietly keep every cookie.
+    if (this.persistSession && this.guest) {
+      try {
+        await this.guest.clearStorageData();
+      } catch {
+        // Best effort; a fresh partition name still follows below.
+      }
+    }
     for (const tab of this.tabs.values()) this.destroyView(tab);
     this.tabs.clear();
     this.order = [];
@@ -366,27 +440,182 @@ export class MiniSession {
    * a site the user just loaded, so this tells no one anything new — unlike
    * asking a favicon service, which would hand over the browsing history.
    */
-  private async captureFavicon(tab: TabRecord, iconUrl: string | undefined): Promise<void> {
-    if (!iconUrl || tab.isStartPage) return;
+  private async captureFavicon(tab: TabRecord, icons: string[]): Promise<void> {
+    if (tab.isStartPage) return;
+
+    // The reported icons first, then the conventional path. A site whose
+    // declared icon 404s or redirects usually still serves /favicon.ico.
+    const candidates = [...icons];
+    try {
+      const root = new URL(tab.url);
+      candidates.push(new URL("/favicon.ico", root).href);
+    } catch {
+      // Not a URL we can resolve against; the declared icons are all we have.
+    }
+
+    for (const candidate of candidates) {
+      const data = await this.fetchIcon(candidate);
+      if (!data || tab.view?.webContents.isDestroyed()) continue;
+      if (tab.favicon === data) return;
+      tab.favicon = data;
+      this.onState();
+      return;
+    }
+  }
+
+  private async fetchIcon(iconUrl: string): Promise<string | null> {
     try {
       const ses = await this.guestSession();
-      const response = await ses.fetch(iconUrl);
-      if (!response.ok) return;
-
-      const type = response.headers.get("content-type") ?? "image/png";
-      if (!type.startsWith("image/")) return;
+      // Without credentials the session's cookies are left out, so an icon
+      // behind a login redirects to HTML and looks like a broken image.
+      const response = await ses.fetch(iconUrl, { credentials: "include" });
+      if (!response.ok) return null;
 
       const bytes = Buffer.from(await response.arrayBuffer());
       // Keeps a stray multi-megabyte "icon" out of the state we ship to the
       // renderer and out of saved bookmarks.
-      if (bytes.byteLength === 0 || bytes.byteLength > 64 * 1024) return;
+      if (bytes.byteLength === 0 || bytes.byteLength > 64 * 1024) return null;
 
-      const next = `data:${type};base64,${bytes.toString("base64")}`;
-      if (tab.favicon === next) return;
-      tab.favicon = next;
-      this.onState();
+      const type = imageTypeOf(bytes, response.headers.get("content-type"));
+      if (!type) return null;
+
+      return `data:${type};base64,${bytes.toString("base64")}`;
     } catch {
       // A missing icon is not worth surfacing; the letter badge covers it.
+      return null;
+    }
+  }
+
+
+  /** Chromium writes cookies lazily; quitting can outrun it. */
+  async flush(): Promise<void> {
+    if (!this.persistSession || !this.guest) return;
+    try {
+      await this.guest.cookies.flushStore();
+    } catch {
+      // Nothing useful to do if the store is already gone.
+    }
+  }
+
+  async setPersistSession(enabled: boolean): Promise<void> {
+    if (enabled === this.persistSession) return;
+
+    // Turning this off has to wipe what was kept. Otherwise the profile sits on
+    // disk looking deleted, and switching back on silently restores logins the
+    // user believed they had discarded. Addressed by partition name rather than
+    // through this.guest, which is null until the first tab creates it.
+    if (!enabled) {
+      try {
+        const stored = electronSession.fromPartition(PERSISTENT_PARTITION);
+        await stored.clearStorageData();
+        await stored.clearCache();
+        await stored.cookies.flushStore();
+      } catch {
+        // Best effort; the partition is abandoned either way.
+      }
+    }
+
+    this.persistSession = enabled;
+    try {
+      await writeFile(
+        join(app.getPath("userData"), "persist-session.json"),
+        JSON.stringify({ persistSession: enabled }),
+      );
+    } catch {
+      // The renderer re-sends this on every launch, so a failed write only
+      // costs correctness for tabs opened before it reports.
+    }
+    // The partition is chosen when the session is built, so it has to be rebuilt.
+    await this.reset();
+    this.onState();
+  }
+
+  private async loadPersistSession(): Promise<void> {
+    try {
+      const raw = await readFile(
+        join(app.getPath("userData"), "persist-session.json"),
+        "utf8",
+      );
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        this.persistSession = (parsed as { persistSession?: unknown }).persistSession === true;
+      }
+    } catch {
+      // Never set; the in-memory default stands.
+    }
+  }
+
+  private moveTab(id: string, toIndex: number): void {
+    const from = this.order.indexOf(id);
+    if (from === -1) return;
+    const to = Math.max(0, Math.min(this.order.length - 1, toIndex));
+    if (from === to) return;
+    this.order.splice(from, 1);
+    this.order.splice(to, 0, id);
+    this.onState();
+  }
+
+  /**
+   * Chromium's own zoom ladder: each step is a factor of 1.2, which is what
+   * setZoomLevel counts in. Clamped to the range Chrome itself offers.
+   */
+  private stepZoom(direction: number, reset = false): void {
+    const view = this.activeView();
+    const tab = this.activeTabId ? this.tabs.get(this.activeTabId) : null;
+    if (!view || !tab) return;
+
+    const next = reset
+      ? 0
+      : Math.max(-4, Math.min(6, view.webContents.getZoomLevel() + direction * 0.5));
+    view.webContents.setZoomLevel(next);
+
+    const host = hostOf(tab.url);
+    if (host) {
+      if (next === 0) this.zoomByHost.delete(host);
+      else this.zoomByHost.set(host, next);
+      void this.saveZoomLevels();
+    }
+    this.onState();
+  }
+
+  /** Re-apply a host's remembered zoom once its page has committed. */
+  private applyZoom(tab: TabRecord): void {
+    if (!tab.view || tab.view.webContents.isDestroyed()) return;
+    const level = this.zoomByHost.get(hostOf(tab.url)) ?? 0;
+    tab.view.webContents.setZoomLevel(level);
+  }
+
+  private zoomPercent(tab: TabRecord): number {
+    const wc = tab.view?.webContents;
+    if (!wc || wc.isDestroyed()) return 100;
+    return Math.round(1.2 ** wc.getZoomLevel() * 100);
+  }
+
+  private async saveZoomLevels(): Promise<void> {
+    try {
+      await writeFile(
+        join(app.getPath("userData"), "zoom-levels.json"),
+        JSON.stringify(Object.fromEntries(this.zoomByHost)),
+      );
+    } catch {
+      // Zoom falling back to 100% next launch is not worth surfacing.
+    }
+  }
+
+  private async loadZoomLevels(): Promise<void> {
+    try {
+      const raw = await readFile(
+        join(app.getPath("userData"), "zoom-levels.json"),
+        "utf8",
+      );
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [host, level] of Object.entries(parsed as Record<string, unknown>)) {
+          if (typeof level === "number") this.zoomByHost.set(host, level);
+        }
+      }
+    } catch {
+      // No saved levels yet.
     }
   }
 
@@ -401,6 +630,7 @@ export class MiniSession {
       canGoForward: history?.canGoForward() ?? false,
       isStartPage: tab.isStartPage,
       favicon: tab.favicon,
+      zoom: this.zoomPercent(tab),
       error: tab.error,
     };
   }
@@ -435,6 +665,19 @@ export function routeBrowserShortcut(
   }
   if (cmd && input.shift && key === "f") {
     window.webContents.send("mini:toggle", "focus");
+    return true;
+  }
+  // "+" needs shift on most layouts, and the numpad sends its own keys.
+  if (cmd && (key === "=" || key === "+" || key === "add")) {
+    void session.handle({ type: "zoomIn" });
+    return true;
+  }
+  if (cmd && (key === "-" || key === "_" || key === "subtract")) {
+    void session.handle({ type: "zoomOut" });
+    return true;
+  }
+  if (cmd && key === "0") {
+    void session.handle({ type: "zoomReset" });
     return true;
   }
   if (cmd && key === ",") {

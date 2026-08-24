@@ -12,16 +12,25 @@ export function SiteIcon({
   favicon,
   url,
   title,
+  isStartPage,
   className,
 }: {
   favicon: string | null;
   url: string;
   title?: string;
+  isStartPage?: boolean;
   className?: string;
 }) {
   const [broken, setBroken] = useState(false);
 
   useEffect(() => setBroken(false), [favicon]);
+
+  // The start page has no site, so a letter would be meaningless — use the mark.
+  if (isStartPage) {
+    return (
+      <span className={cn("mini-site-icon mini-site-icon-mark", className)} aria-hidden="true" />
+    );
+  }
 
   const letter =
     (hostnameOf(url) || title || "?").trim()[0]?.toUpperCase() ?? "?";

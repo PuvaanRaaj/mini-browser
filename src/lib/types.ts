@@ -8,6 +8,8 @@ export type TabInfo = {
   isStartPage: boolean;
   /** The page's own icon, inlined as a data URL. */
   favicon: string | null;
+  /** Page zoom as a percentage; 100 when untouched. */
+  zoom: number;
   error: string | null;
 };
 
@@ -19,6 +21,10 @@ export type MiniSettings = {
   tabPosition: TabPosition;
   favoritesMode: FavoritesMode;
   restoreSession: boolean;
+  /** Keep cookies and logins on disk between launches. Off by default. */
+  persistSession: boolean;
+  /** The cat and kitten that pad along the toolbar. */
+  cats: boolean;
 };
 
 export type Bookmark = {
@@ -48,6 +54,10 @@ export type BrowserCommand =
   | { type: "newTab" }
   | { type: "closeTab"; id: string }
   | { type: "switchTab"; id: string }
+  | { type: "moveTab"; id: string; toIndex: number }
+  | { type: "zoomIn" }
+  | { type: "zoomOut" }
+  | { type: "zoomReset" }
   | { type: "resetSession" };
 
 export type LayoutRect = {

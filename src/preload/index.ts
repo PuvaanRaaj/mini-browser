@@ -13,6 +13,9 @@ const mini = {
   chromeTheme: (theme: "light" | "dark"): void => {
     ipcRenderer.send("mini:chrome-theme", theme);
   },
+  persistSession: (enabled: boolean): void => {
+    ipcRenderer.send("mini:persist-session", enabled);
+  },
   onState: (callback: (state: BrowserState) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, state: BrowserState) => callback(state);
     ipcRenderer.on("mini:state", listener);

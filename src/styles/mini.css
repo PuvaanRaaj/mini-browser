@@ -28,6 +28,7 @@ body,
 }
 
 .mini-chrome {
+  position: relative;
   z-index: 20;
   display: flex;
   flex-shrink: 0;
@@ -44,7 +45,127 @@ body,
   padding-left: 78px;
 }
 
+.mini-cats {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mini-cat {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  display: block;
+  animation: mini-cat-walk 46s linear infinite;
+}
+
+/* A tuxedo: charcoal rather than true black, or it would vanish into the
+   toolbar, with white bib, muzzle and socks carrying the shape. */
+.mini-cat-tuxedo {
+  --cat-coat: #34343d;
+  --cat-white: #f2f2f0;
+}
+
+/* Ginger tabby: orange coat, brown stripes, white bib and socks. */
+.mini-cat-ginger {
+  --cat-coat: #c9762f;
+  --cat-mark: #8a4f22;
+  --cat-white: #f2f2f0;
+  animation-delay: 1.6s;
+}
+
+.mini-cat-coat {
+  fill: var(--cat-coat);
+}
+
+.mini-cat-white {
+  fill: var(--cat-white);
+}
+
+.mini-cat-mark {
+  fill: var(--cat-mark);
+}
+
+.mini-cat svg {
+  display: block;
+  width: calc(40px * var(--cat-scale));
+  height: calc(24px * var(--cat-scale));
+  overflow: visible;
+  animation: mini-cat-bob 0.42s ease-in-out infinite;
+}
+
+.mini-cat-ginger svg {
+  animation-duration: 0.32s;
+}
+
+.mini-cat-leg {
+  transform-origin: 50% 0;
+  animation: mini-cat-step 0.42s ease-in-out infinite;
+}
+
+.mini-cat-leg-2,
+.mini-cat-leg-3 {
+  animation-delay: 0.21s;
+}
+
+.mini-cat-tail {
+  transform-origin: 6px 16px;
+  animation: mini-cat-tail 1.9s ease-in-out infinite;
+}
+
+@keyframes mini-cat-walk {
+  /* Most of the cycle is spent off-screen: a pass now and then is a surprise,
+     a permanent parade is a distraction. */
+  0% {
+    transform: translateX(-48px);
+  }
+  22%,
+  100% {
+    transform: translateX(calc(100vw + 48px));
+  }
+}
+
+@keyframes mini-cat-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.6px);
+  }
+}
+
+@keyframes mini-cat-step {
+  0%,
+  100% {
+    transform: rotate(11deg);
+  }
+  50% {
+    transform: rotate(-11deg);
+  }
+}
+
+@keyframes mini-cat-tail {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-cats {
+    display: none;
+  }
+}
+
 .mini-tabs {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-width: 0;
   flex-shrink: 1;
@@ -105,7 +226,21 @@ body,
   line-height: 1;
 }
 
+.mini-site-icon-mark {
+  box-sizing: border-box;
+  border: 2.5px solid #7c7c85;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.mini-tab-active .mini-site-icon-mark {
+  border-color: #d4d4d8;
+}
+
+/* display:flex centres the letter badge, but on a replaced element it collapses
+   the image's own box — an <img> needs to stay a block. */
 .mini-site-icon-img {
+  display: block;
   background: transparent;
   object-fit: contain;
 }
@@ -149,6 +284,8 @@ body,
 }
 
 .mini-nav {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -168,6 +305,8 @@ body,
 }
 
 .mini-url-form {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   flex: 1;
   -webkit-app-region: no-drag;
@@ -410,6 +549,18 @@ body,
   gap: 2px;
 }
 
+.mini-tab-dragging {
+  opacity: 0.4;
+}
+
+.mini-tab-drop-target {
+  box-shadow: inset 0 2px 0 #fafafa;
+}
+
+.mini-tabs-side .mini-tab-drop-target {
+  box-shadow: inset 2px 0 0 #fafafa;
+}
+
 .mini-tab-side {
   max-width: none;
   width: 200px;
@@ -606,6 +757,19 @@ body,
   font-weight: 600;
 }
 
+.mini-start-tile-badge.mini-site-icon-mark {
+  box-sizing: border-box;
+  border: 2.5px solid #7c7c85;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.mini-tab-active .mini-site-icon-mark {
+  border-color: #d4d4d8;
+}
+
+/* Only the big start-page tiles inset their icon; scoped, or every 16px
+   favicon loses 12px of its 16 to padding and renders as a speck. */
 .mini-start-tile-badge.mini-site-icon-img {
   padding: 6px;
 }
@@ -919,7 +1083,27 @@ body,
   color: #fafafa;
 }
 
+.mini-zoom-chip {
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  border: 1px solid #232327;
+  border-radius: 7px;
+  background: #17171b;
+  color: #d4d4d8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.mini-zoom-chip:hover {
+  background: #232327;
+  color: #fafafa;
+}
+
 .mini-ext-tray {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-shrink: 0;
   align-items: center;

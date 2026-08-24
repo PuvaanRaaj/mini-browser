@@ -29,7 +29,7 @@ export function MiniApp() {
   const [favoritesPanelOpen, setFavoritesPanelOpen] = useState(false);
   const [toolbarHover, setToolbarHover] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
-  const { bookmarks, remove, toggle, isSaved } = useBookmarks();
+  const { bookmarks, remove, update, toggle, isSaved } = useBookmarks();
   const urlRef = useRef<HTMLInputElement | null>(null);
   const slotRef = useRef<HTMLDivElement | null>(null);
   const restoredRef = useRef(false);
@@ -115,6 +115,11 @@ export function MiniApp() {
     saveSession(state.tabs.filter((tab) => !tab.isStartPage).map((tab) => tab.url));
   }, [sessionReady, settings.restoreSession, state.tabs]);
 
+  // The main process picks the session partition, so it needs to know.
+  useEffect(() => {
+    window.mini?.persistSession(settings.persistSession);
+  }, [settings.persistSession]);
+
   // Keep the native caption buttons on the same surface the renderer shows.
   useEffect(() => {
     window.mini?.chromeTheme("dark");
@@ -167,14 +172,12 @@ export function MiniApp() {
         toggleBookmark();
       }
       if (what === "favorites") {
-        if (favoritesMode === "never") {
-          setOmniboxOpen(false);
-          setAuthenticatorOpen(false);
-          setSettingsOpen(false);
-          setFavoritesPanelOpen((value) => !value);
-        } else {
-          setSetting("favoritesMode", favoritesMode === "always" ? "hover" : "always");
-        }
+        // Always the manager: where the bar sits is a Settings choice, so a
+        // shortcut that silently changed it was doing two unrelated jobs.
+        setOmniboxOpen(false);
+        setAuthenticatorOpen(false);
+        setSettingsOpen(false);
+        setFavoritesPanelOpen((value) => !value);
       }
     });
     return () => {
@@ -225,8 +228,7 @@ export function MiniApp() {
       }
       if (mod && event.shiftKey && key === "b") {
         event.preventDefault();
-        if (favoritesMode === "never") setFavoritesPanelOpen((value) => !value);
-        else setSetting("favoritesMode", favoritesMode === "always" ? "hover" : "always");
+        setFavoritesPanelOpen((value) => !value);
       }
       if (mod && event.shiftKey && key === "s") {
         event.preventDefault();
@@ -295,6 +297,9 @@ export function MiniApp() {
               onForward={() => dispatch({ type: "forward" })}
               onReload={() => dispatch({ type: "reload" })}
               onFocusMode={() => setFocusMode(true)}
+              onZoomReset={() => dispatch({ type: "zoomReset" })}
+              onMove={(id, toIndex) => dispatch({ type: "moveTab", id, toIndex })}
+              cats={settings.cats}
             />
 
             {showFavoritesBar ? (
@@ -319,6 +324,7 @@ export function MiniApp() {
                 onSelect={(id) => dispatch({ type: "switchTab", id })}
                 onClose={(id) => dispatch({ type: "closeTab", id })}
                 onNew={() => dispatch({ type: "newTab" })}
+                onMove={(id, toIndex) => dispatch({ type: "moveTab", id, toIndex })}
               />
             </aside>
           ) : null}
@@ -379,6 +385,7 @@ export function MiniApp() {
                     bookmarks={bookmarks}
                     onOpen={navigate}
                     onRemove={remove}
+                    onUpdate={update}
                     onClose={() => setFavoritesPanelOpen(false)}
                   />
                 ) : null}

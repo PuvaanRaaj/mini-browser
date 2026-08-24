@@ -1,20 +1,74 @@
-import { Trash2Icon, XIcon } from "lucide-react";
+import { CheckIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useState } from "react";
 
+import { SiteIcon } from "@/components/site-icon";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Bookmark } from "@/lib/types";
 import { hostnameOf } from "@/lib/url";
+
+function EditRow({
+  bookmark,
+  onSave,
+  onCancel,
+}: {
+  bookmark: Bookmark;
+  onSave: (patch: { title: string; url: string }) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState(bookmark.title);
+  const [url, setUrl] = useState(bookmark.url);
+
+  return (
+    <form
+      className="flex flex-col gap-1.5 rounded-lg bg-muted/40 px-2 py-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave({ title, url });
+      }}
+    >
+      <Input
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        placeholder="Name"
+        aria-label="Favorite name"
+        autoFocus
+      />
+      <Input
+        value={url}
+        onChange={(event) => setUrl(event.target.value)}
+        placeholder="https://example.com"
+        aria-label="Favorite address"
+        spellCheck={false}
+      />
+      <div className="flex justify-end gap-1.5">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" size="sm">
+          <CheckIcon />
+          Save
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 export function FavoritesPanel({
   bookmarks,
   onOpen,
   onRemove,
+  onUpdate,
   onClose,
 }: {
   bookmarks: Bookmark[];
   onOpen: (url: string) => void;
   onRemove: (id: string) => void;
+  onUpdate: (id: string, patch: { title?: string; url?: string }) => void;
   onClose: () => void;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   return (
     <aside className="mini-sheet">
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
@@ -37,34 +91,60 @@ export function FavoritesPanel({
             Press the star in the toolbar to save the page you are on.
           </p>
         ) : (
-          bookmarks.map((bookmark) => (
-            <div
-              key={bookmark.id}
-              className="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent"
-            >
-              <button
-                type="button"
-                className="flex min-w-0 flex-1 flex-col items-start text-left"
-                onClick={() => onOpen(bookmark.url)}
+          bookmarks.map((bookmark) =>
+            editingId === bookmark.id ? (
+              <EditRow
+                key={bookmark.id}
+                bookmark={bookmark}
+                onSave={(patch) => {
+                  onUpdate(bookmark.id, patch);
+                  setEditingId(null);
+                }}
+                onCancel={() => setEditingId(null)}
+              />
+            ) : (
+              <div
+                key={bookmark.id}
+                className="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent"
               >
-                <span className="w-full truncate text-[13px] text-foreground">
-                  {bookmark.title || hostnameOf(bookmark.url)}
-                </span>
-                <span className="w-full truncate text-[11px] text-muted-foreground">
-                  {hostnameOf(bookmark.url)}
-                </span>
-              </button>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="opacity-0 group-hover:opacity-100"
-                onClick={() => onRemove(bookmark.id)}
-                aria-label={`Remove ${bookmark.title}`}
-              >
-                <Trash2Icon />
-              </Button>
-            </div>
-          ))
+                <SiteIcon
+                  favicon={bookmark.favicon}
+                  url={bookmark.url}
+                  title={bookmark.title}
+                />
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 flex-col items-start text-left"
+                  onClick={() => onOpen(bookmark.url)}
+                >
+                  <span className="w-full truncate text-[13px] text-foreground">
+                    {bookmark.title || hostnameOf(bookmark.url)}
+                  </span>
+                  <span className="w-full truncate text-[11px] text-muted-foreground">
+                    {hostnameOf(bookmark.url)}
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="opacity-0 group-hover:opacity-100"
+                  onClick={() => setEditingId(bookmark.id)}
+                  aria-label={`Edit ${bookmark.title}`}
+                >
+                  <PencilIcon />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="opacity-0 group-hover:opacity-100"
+                  onClick={() => onRemove(bookmark.id)}
+                  aria-label={`Remove ${bookmark.title}`}
+                >
+                  <Trash2Icon />
+                </Button>
+              </div>
+            ),
+          )
         )}
       </div>
     </aside>

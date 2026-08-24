@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState, type RefObject } from "react";
 
+import { HeaderCats } from "@/components/header-cats";
 import { TabStrip } from "@/components/tab-strip";
 import { modLabel } from "@/lib/mod";
 import type { FavoritesMode, TabInfo, TabPosition } from "@/lib/types";
@@ -41,6 +42,9 @@ export function CompactChrome({
   onForward,
   onReload,
   onFocusMode,
+  onZoomReset,
+  onMove,
+  cats,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
@@ -64,6 +68,9 @@ export function CompactChrome({
   onForward: () => void;
   onReload: () => void;
   onFocusMode: () => void;
+  onZoomReset: () => void;
+  onMove: (id: string, toIndex: number) => void;
+  cats: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
@@ -72,6 +79,7 @@ export function CompactChrome({
 
   return (
     <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
+      {cats ? <HeaderCats /> : null}
       {tabPosition === "top" ? (
         <TabStrip
           tabs={tabs}
@@ -80,6 +88,7 @@ export function CompactChrome({
           onSelect={onSelect}
           onClose={onClose}
           onNew={onNew}
+          onMove={onMove}
         />
       ) : null}
 
@@ -145,6 +154,17 @@ export function CompactChrome({
       </form>
 
       <div className="mini-ext-tray">
+        {activeTab && activeTab.zoom !== 100 ? (
+          <button
+            type="button"
+            className="mini-zoom-chip"
+            onClick={onZoomReset}
+            title={`Reset zoom (${mod}+0)`}
+            aria-label={`Zoom ${activeTab.zoom}%, reset`}
+          >
+            {activeTab.zoom}%
+          </button>
+        ) : null}
         <button
           type="button"
           className={cn("mini-icon-btn", bookmarked && "mini-icon-btn-active")}
@@ -155,17 +175,15 @@ export function CompactChrome({
         >
           <StarIcon fill={bookmarked ? "currentColor" : "none"} />
         </button>
-        {favoritesMode === "never" ? (
-          <button
-            type="button"
-            className="mini-icon-btn"
-            onClick={onFavorites}
-            title={`Favorites (${mod}+Shift+B)`}
-            aria-label="Favorites"
-          >
-            <BookmarkIcon />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="mini-icon-btn"
+          onClick={onFavorites}
+          title={`Favorites (${mod}+Shift+B)`}
+          aria-label="Favorites"
+        >
+          <BookmarkIcon />
+        </button>
         <button
           type="button"
           className="mini-icon-btn"
