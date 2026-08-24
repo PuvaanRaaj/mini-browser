@@ -58,26 +58,45 @@ body,
   bottom: 4px;
   left: 0;
   display: block;
-  /* Light enough to read against #0a0a0b, dim enough to stay scenery. */
-  color: #3f3f46;
   animation: mini-cat-walk 46s linear infinite;
+}
+
+/* A tuxedo: charcoal rather than true black, or it would vanish into the
+   toolbar, with white bib, muzzle and socks carrying the shape. */
+.mini-cat-tuxedo {
+  --cat-coat: #34343d;
+  --cat-white: #f2f2f0;
+}
+
+/* Ginger tabby: orange coat, brown stripes, white bib and socks. */
+.mini-cat-ginger {
+  --cat-coat: #c9762f;
+  --cat-mark: #8a4f22;
+  --cat-white: #f2f2f0;
+  animation-delay: 1.6s;
+}
+
+.mini-cat-coat {
+  fill: var(--cat-coat);
+}
+
+.mini-cat-white {
+  fill: var(--cat-white);
+}
+
+.mini-cat-mark {
+  fill: var(--cat-mark);
 }
 
 .mini-cat svg {
   display: block;
   width: calc(40px * var(--cat-scale));
   height: calc(24px * var(--cat-scale));
-  fill: currentColor;
+  overflow: visible;
   animation: mini-cat-bob 0.42s ease-in-out infinite;
 }
 
-/* The kitten trails a little behind and takes quicker steps. */
-.mini-cat-kitten {
-  color: #35353c;
-  animation-delay: 1.6s;
-}
-
-.mini-cat-kitten svg {
+.mini-cat-ginger svg {
   animation-duration: 0.32s;
 }
 
