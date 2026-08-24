@@ -106,6 +106,21 @@ export function SettingsPanel({
         </Row>
 
         <Row
+          title="Stay signed in"
+          hint="Keeps cookies and logins on disk so sites remember you next launch. Off by default: a throwaway in-memory profile is what makes this browser private. Switching either way signs you out and reopens your tabs."
+        >
+          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-foreground">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-foreground"
+              checked={settings.persistSession}
+              onChange={(event) => onChange("persistSession", event.target.checked)}
+            />
+            Remember logins between launches
+          </label>
+        </Row>
+
+        <Row
           title="Continue where you left off"
           hint="Reopen last session's tabs at launch. Pages reload fresh — cookies and logins are never kept."
         >

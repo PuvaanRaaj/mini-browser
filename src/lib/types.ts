@@ -21,6 +21,8 @@ export type MiniSettings = {
   tabPosition: TabPosition;
   favoritesMode: FavoritesMode;
   restoreSession: boolean;
+  /** Keep cookies and logins on disk between launches. Off by default. */
+  persistSession: boolean;
 };
 
 export type Bookmark = {

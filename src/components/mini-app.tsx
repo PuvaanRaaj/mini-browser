@@ -115,6 +115,11 @@ export function MiniApp() {
     saveSession(state.tabs.filter((tab) => !tab.isStartPage).map((tab) => tab.url));
   }, [sessionReady, settings.restoreSession, state.tabs]);
 
+  // The main process picks the session partition, so it needs to know.
+  useEffect(() => {
+    window.mini?.persistSession(settings.persistSession);
+  }, [settings.persistSession]);
+
   // Keep the native caption buttons on the same surface the renderer shows.
   useEffect(() => {
     window.mini?.chromeTheme("dark");

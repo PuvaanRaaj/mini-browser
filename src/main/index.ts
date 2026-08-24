@@ -97,6 +97,9 @@ app.whenReady().then(() => {
   ipcMain.on("mini:layout", (_event, rect: LayoutRect) => {
     mini?.applyLayout(rect);
   });
+  ipcMain.on("mini:persist-session", (_event, enabled: boolean) => {
+    void mini?.setPersistSession(enabled === true);
+  });
   ipcMain.on("mini:chrome-theme", (_event, theme: "light" | "dark") => {
     // Both surfaces are dark now, but keep the hook so a light theme can
     // repaint the caption strip without new plumbing.
@@ -118,6 +121,16 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+// Give the cookie store a chance to land before the process goes away, or a
+// login made seconds earlier is lost despite "Stay signed in".
+let flushed = false;
+app.on("before-quit", (event) => {
+  if (flushed || !mini) return;
+  event.preventDefault();
+  flushed = true;
+  void mini.flush().finally(() => app.quit());
 });
 
 app.on("window-all-closed", () => {

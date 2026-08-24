@@ -8,6 +8,7 @@ declare global {
       command: (command: BrowserCommand) => Promise<BrowserState>;
       layout: (rect: LayoutRect) => void;
       chromeTheme: (theme: "light" | "dark") => void;
+      persistSession: (enabled: boolean) => void;
       onState: (callback: (state: BrowserState) => void) => () => void;
       onFocusUrl: (callback: () => void) => () => void;
       onToggle: (callback: (what: "focus" | "authenticator" | "sidebar" | "bookmark" | "favorites" | "settings") => void) => () => void;

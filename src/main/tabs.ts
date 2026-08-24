@@ -16,6 +16,8 @@ import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-e
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
 import { hostnameOf, resolveNavigation } from "../lib/url";
 
+const PERSISTENT_PARTITION = "persist:mini-signed-in";
+
 function hostOf(url: string): string {
   return hostnameOf(url);
 }
@@ -75,6 +77,7 @@ export class MiniSession {
   private extensionLoaded = false;
   private adblockEnabled = false;
   private zoomByHost = new Map<string, number>();
+  private persistSession = false;
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
@@ -82,6 +85,7 @@ export class MiniSession {
     private readonly onState: () => void,
   ) {
     void this.loadZoomLevels();
+    void this.loadPersistSession();
     this.createStartTab(true);
   }
 
@@ -205,7 +209,12 @@ export class MiniSession {
 
   private async guestSession(): Promise<Session> {
     if (this.guest) return this.guest;
-    this.guest = electronSession.fromPartition(`mini-${this.sessionId}`);
+    // "persist:" is what makes Chromium write the profile to disk. Without it
+    // the partition lives in memory and dies with the window, which is the
+    // default and the whole point of this browser.
+    this.guest = electronSession.fromPartition(
+      this.persistSession ? PERSISTENT_PARTITION : `mini-${this.sessionId}`,
+    );
     this.guest.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     this.guest.setUserAgent(this.guest.getUserAgent().replace(/Electron\/\S+\s/g, ""));
     const session = this.guest;
@@ -356,6 +365,15 @@ export class MiniSession {
   }
 
   private async reset(): Promise<void> {
+    // An in-memory partition disappears on its own; a persistent one has to be
+    // wiped, or "Reset Session" would quietly keep every cookie.
+    if (this.persistSession && this.guest) {
+      try {
+        await this.guest.clearStorageData();
+      } catch {
+        // Best effort; a fresh partition name still follows below.
+      }
+    }
     for (const tab of this.tabs.values()) this.destroyView(tab);
     this.tabs.clear();
     this.order = [];
@@ -468,6 +486,64 @@ export class MiniSession {
     }
   }
 
+
+  /** Chromium writes cookies lazily; quitting can outrun it. */
+  async flush(): Promise<void> {
+    if (!this.persistSession || !this.guest) return;
+    try {
+      await this.guest.cookies.flushStore();
+    } catch {
+      // Nothing useful to do if the store is already gone.
+    }
+  }
+
+  async setPersistSession(enabled: boolean): Promise<void> {
+    if (enabled === this.persistSession) return;
+
+    // Turning this off has to wipe what was kept. Otherwise the profile sits on
+    // disk looking deleted, and switching back on silently restores logins the
+    // user believed they had discarded. Addressed by partition name rather than
+    // through this.guest, which is null until the first tab creates it.
+    if (!enabled) {
+      try {
+        const stored = electronSession.fromPartition(PERSISTENT_PARTITION);
+        await stored.clearStorageData();
+        await stored.clearCache();
+        await stored.cookies.flushStore();
+      } catch {
+        // Best effort; the partition is abandoned either way.
+      }
+    }
+
+    this.persistSession = enabled;
+    try {
+      await writeFile(
+        join(app.getPath("userData"), "persist-session.json"),
+        JSON.stringify({ persistSession: enabled }),
+      );
+    } catch {
+      // The renderer re-sends this on every launch, so a failed write only
+      // costs correctness for tabs opened before it reports.
+    }
+    // The partition is chosen when the session is built, so it has to be rebuilt.
+    await this.reset();
+    this.onState();
+  }
+
+  private async loadPersistSession(): Promise<void> {
+    try {
+      const raw = await readFile(
+        join(app.getPath("userData"), "persist-session.json"),
+        "utf8",
+      );
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        this.persistSession = (parsed as { persistSession?: unknown }).persistSession === true;
+      }
+    } catch {
+      // Never set; the in-memory default stands.
+    }
+  }
 
   private moveTab(id: string, toIndex: number): void {
     const from = this.order.indexOf(id);
