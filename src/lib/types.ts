@@ -8,6 +8,8 @@ export type TabInfo = {
   isStartPage: boolean;
   /** The page's own icon, inlined as a data URL. */
   favicon: string | null;
+  /** Page zoom as a percentage; 100 when untouched. */
+  zoom: number;
   error: string | null;
 };
 
@@ -48,6 +50,10 @@ export type BrowserCommand =
   | { type: "newTab" }
   | { type: "closeTab"; id: string }
   | { type: "switchTab"; id: string }
+  | { type: "moveTab"; id: string; toIndex: number }
+  | { type: "zoomIn" }
+  | { type: "zoomOut" }
+  | { type: "zoomReset" }
   | { type: "resetSession" };
 
 export type LayoutRect = {

@@ -410,6 +410,18 @@ body,
   gap: 2px;
 }
 
+.mini-tab-dragging {
+  opacity: 0.4;
+}
+
+.mini-tab-drop-target {
+  box-shadow: inset 0 2px 0 #fafafa;
+}
+
+.mini-tabs-side .mini-tab-drop-target {
+  box-shadow: inset 2px 0 0 #fafafa;
+}
+
 .mini-tab-side {
   max-width: none;
   width: 200px;
@@ -915,6 +927,24 @@ body,
 }
 
 .mini-icon-btn-active {
+  background: #232327;
+  color: #fafafa;
+}
+
+.mini-zoom-chip {
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  border: 1px solid #232327;
+  border-radius: 7px;
+  background: #17171b;
+  color: #d4d4d8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.mini-zoom-chip:hover {
   background: #232327;
   color: #fafafa;
 }

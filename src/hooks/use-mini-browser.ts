@@ -11,6 +11,7 @@ const emptyTab = (id: string): TabInfo => ({
   canGoBack: false,
   canGoForward: false,
   favicon: null,
+  zoom: 100,
   isStartPage: true,
   error: null,
 });

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -13,7 +14,11 @@ import {
 import { enableAdblock } from "./adblock";
 import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-error";
 import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
-import { resolveNavigation } from "../lib/url";
+import { hostnameOf, resolveNavigation } from "../lib/url";
+
+function hostOf(url: string): string {
+  return hostnameOf(url);
+}
 
 type TabRecord = {
   id: string;
@@ -34,12 +39,14 @@ export class MiniSession {
   private guest: Session | null = null;
   private extensionLoaded = false;
   private adblockEnabled = false;
+  private zoomByHost = new Map<string, number>();
   private layout: LayoutRect = { x: 0, y: 0, width: 1280, height: 720, visible: false };
 
   constructor(
     private readonly window: BrowserWindow,
     private readonly onState: () => void,
   ) {
+    void this.loadZoomLevels();
     this.createStartTab(true);
   }
 
@@ -92,6 +99,18 @@ export class MiniSession {
         break;
       case "switchTab":
         this.switchTab(command.id);
+        break;
+      case "moveTab":
+        this.moveTab(command.id, command.toIndex);
+        break;
+      case "zoomIn":
+        this.stepZoom(1);
+        break;
+      case "zoomOut":
+        this.stepZoom(-1);
+        break;
+      case "zoomReset":
+        this.stepZoom(0, true);
         break;
       case "resetSession":
         await this.reset();
@@ -259,6 +278,7 @@ export class MiniSession {
     wc.on("did-navigate", (_event, url) => {
       tab.favicon = null;
       tab.url = url;
+      this.applyZoom(tab);
       tab.isStartPage = false;
       this.onState();
     });
@@ -390,6 +410,80 @@ export class MiniSession {
     }
   }
 
+  private moveTab(id: string, toIndex: number): void {
+    const from = this.order.indexOf(id);
+    if (from === -1) return;
+    const to = Math.max(0, Math.min(this.order.length - 1, toIndex));
+    if (from === to) return;
+    this.order.splice(from, 1);
+    this.order.splice(to, 0, id);
+    this.onState();
+  }
+
+  /**
+   * Chromium's own zoom ladder: each step is a factor of 1.2, which is what
+   * setZoomLevel counts in. Clamped to the range Chrome itself offers.
+   */
+  private stepZoom(direction: number, reset = false): void {
+    const view = this.activeView();
+    const tab = this.activeTabId ? this.tabs.get(this.activeTabId) : null;
+    if (!view || !tab) return;
+
+    const next = reset
+      ? 0
+      : Math.max(-4, Math.min(6, view.webContents.getZoomLevel() + direction * 0.5));
+    view.webContents.setZoomLevel(next);
+
+    const host = hostOf(tab.url);
+    if (host) {
+      if (next === 0) this.zoomByHost.delete(host);
+      else this.zoomByHost.set(host, next);
+      void this.saveZoomLevels();
+    }
+    this.onState();
+  }
+
+  /** Re-apply a host's remembered zoom once its page has committed. */
+  private applyZoom(tab: TabRecord): void {
+    if (!tab.view || tab.view.webContents.isDestroyed()) return;
+    const level = this.zoomByHost.get(hostOf(tab.url)) ?? 0;
+    tab.view.webContents.setZoomLevel(level);
+  }
+
+  private zoomPercent(tab: TabRecord): number {
+    const wc = tab.view?.webContents;
+    if (!wc || wc.isDestroyed()) return 100;
+    return Math.round(1.2 ** wc.getZoomLevel() * 100);
+  }
+
+  private async saveZoomLevels(): Promise<void> {
+    try {
+      await writeFile(
+        join(app.getPath("userData"), "zoom-levels.json"),
+        JSON.stringify(Object.fromEntries(this.zoomByHost)),
+      );
+    } catch {
+      // Zoom falling back to 100% next launch is not worth surfacing.
+    }
+  }
+
+  private async loadZoomLevels(): Promise<void> {
+    try {
+      const raw = await readFile(
+        join(app.getPath("userData"), "zoom-levels.json"),
+        "utf8",
+      );
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [host, level] of Object.entries(parsed as Record<string, unknown>)) {
+          if (typeof level === "number") this.zoomByHost.set(host, level);
+        }
+      }
+    } catch {
+      // No saved levels yet.
+    }
+  }
+
   private toInfo(tab: TabRecord): TabInfo {
     const history = tab.view?.webContents.navigationHistory;
     return {
@@ -401,6 +495,7 @@ export class MiniSession {
       canGoForward: history?.canGoForward() ?? false,
       isStartPage: tab.isStartPage,
       favicon: tab.favicon,
+      zoom: this.zoomPercent(tab),
       error: tab.error,
     };
   }
@@ -435,6 +530,19 @@ export function routeBrowserShortcut(
   }
   if (cmd && input.shift && key === "f") {
     window.webContents.send("mini:toggle", "focus");
+    return true;
+  }
+  // "+" needs shift on most layouts, and the numpad sends its own keys.
+  if (cmd && (key === "=" || key === "+" || key === "add")) {
+    void session.handle({ type: "zoomIn" });
+    return true;
+  }
+  if (cmd && (key === "-" || key === "_" || key === "subtract")) {
+    void session.handle({ type: "zoomOut" });
+    return true;
+  }
+  if (cmd && key === "0") {
+    void session.handle({ type: "zoomReset" });
     return true;
   }
   if (cmd && key === ",") {

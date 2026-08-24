@@ -95,6 +95,25 @@ export function installMenu(getSession: () => MiniSession | null, getWindow: () 
           click: () => getWindow()?.webContents.send("mini:toggle", "authenticator"),
         },
         { type: "separator" },
+        {
+          label: "Zoom In",
+          accelerator: "CmdOrCtrl+Plus",
+          registerAccelerator: false,
+          click: () => withSession((session) => void session.handle({ type: "zoomIn" })),
+        },
+        {
+          label: "Zoom Out",
+          accelerator: "CmdOrCtrl+-",
+          registerAccelerator: false,
+          click: () => withSession((session) => void session.handle({ type: "zoomOut" })),
+        },
+        {
+          label: "Actual Size",
+          accelerator: "CmdOrCtrl+0",
+          registerAccelerator: false,
+          click: () => withSession((session) => void session.handle({ type: "zoomReset" })),
+        },
+        { type: "separator" },
         { role: "togglefullscreen" },
         ...(process.env.NODE_ENV === "development" || !app.isPackaged
           ? [{ role: "toggleDevTools" as const }]
@@ -111,7 +130,7 @@ export function installMenu(getSession: () => MiniSession | null, getWindow: () 
           click: () => getWindow()?.webContents.send("mini:toggle", "bookmark"),
         },
         {
-          label: "Favorites Bar",
+          label: "Favorites",
           accelerator: "CmdOrCtrl+Shift+B",
           registerAccelerator: false,
           click: () => getWindow()?.webContents.send("mini:toggle", "favorites"),
