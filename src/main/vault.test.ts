@@ -10,7 +10,7 @@ import { SecureVault, type VaultCipher } from "./vault";
 const cipher: VaultCipher = {
   isEncryptionAvailable: () => true,
   backend: () => "test_keychain",
-  encryptString: (value) => Buffer.from(value).map((byte) => byte ^ 0xa5),
+  encryptString: (value) => Buffer.from(Buffer.from(value).map((byte) => byte ^ 0xa5)),
   decryptString: (value) => Buffer.from(value.map((byte) => byte ^ 0xa5)).toString("utf8"),
 };
 

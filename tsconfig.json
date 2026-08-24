@@ -19,7 +19,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/preload/index.d.ts",
+    "src/preload/global.d.ts",
     "electron.vite.config.ts"
   ],
   "exclude": ["node_modules", "out", "release", "extension"]

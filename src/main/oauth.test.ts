@@ -43,16 +43,18 @@ async function main(): Promise<void> {
   },
   );
 
-  assert.ok(authorizationUrl);
-  assert.equal(authorizationUrl.hostname, "accounts.google.com");
-  assert.equal(authorizationUrl.searchParams.get("response_type"), "code");
-  assert.equal(authorizationUrl.searchParams.get("code_challenge_method"), "S256");
-  assert.equal(authorizationUrl.searchParams.get("scope"), "openid email");
-  assert.ok(authorizationUrl.searchParams.get("code_challenge"));
-  assert.ok(tokenBody);
-  assert.equal(tokenBody.get("code"), "one-time-code");
-  assert.equal(tokenBody.get("grant_type"), "authorization_code");
-  assert.ok(tokenBody.get("code_verifier"));
+  const openedUrl = authorizationUrl as unknown as URL;
+  const exchangedBody = tokenBody as unknown as URLSearchParams;
+  assert.ok(openedUrl);
+  assert.equal(openedUrl.hostname, "accounts.google.com");
+  assert.equal(openedUrl.searchParams.get("response_type"), "code");
+  assert.equal(openedUrl.searchParams.get("code_challenge_method"), "S256");
+  assert.equal(openedUrl.searchParams.get("scope"), "openid email");
+  assert.ok(openedUrl.searchParams.get("code_challenge"));
+  assert.ok(exchangedBody);
+  assert.equal(exchangedBody.get("code"), "one-time-code");
+  assert.equal(exchangedBody.get("grant_type"), "authorization_code");
+  assert.ok(exchangedBody.get("code_verifier"));
   assert.equal(result.accessToken, "access-token");
   assert.equal(result.refreshToken, "refresh-token");
   assert.equal(result.expiresAt, 4_600_000);
