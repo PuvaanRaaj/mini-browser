@@ -20,6 +20,41 @@ function hostOf(url: string): string {
   return hostnameOf(url);
 }
 
+/**
+ * Trust the bytes over the header. Plenty of servers hand back .ico as
+ * application/octet-stream or with no type at all, and a login redirect arrives
+ * as perfectly valid text/html.
+ */
+function imageTypeOf(bytes: Buffer, headerType: string | null): string | null {
+  if (bytes.length >= 8 && bytes.subarray(0, 8).toString("hex") === "89504e470d0a1a0a") {
+    return "image/png";
+  }
+  if (bytes.length >= 4 && bytes.subarray(0, 4).toString("hex") === "00000100") {
+    return "image/x-icon";
+  }
+  if (bytes.length >= 3 && bytes.subarray(0, 3).toString("hex") === "ffd8ff") {
+    return "image/jpeg";
+  }
+  if (bytes.length >= 6 && bytes.subarray(0, 6).toString("ascii") === "GIF89a") {
+    return "image/gif";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+    bytes.subarray(8, 12).toString("ascii") === "WEBP"
+  ) {
+    return "image/webp";
+  }
+
+  const head = bytes.subarray(0, 256).toString("utf8").trimStart().toLowerCase();
+  if (head.startsWith("<svg") || head.startsWith("<?xml")) return "image/svg+xml";
+  // An HTML login page is the usual disguise; never inline that as an icon.
+  if (head.startsWith("<!doctype html") || head.startsWith("<html")) return null;
+
+  const declared = (headerType ?? "").split(";")[0].trim();
+  return declared.startsWith("image/") ? declared : null;
+}
+
 type TabRecord = {
   id: string;
   view: WebContentsView | null;
@@ -258,7 +293,7 @@ export class MiniSession {
       return { action: "deny" };
     });
     wc.on("page-favicon-updated", (_event, icons) => {
-      void this.captureFavicon(tab, icons[0]);
+      void this.captureFavicon(tab, icons);
     });
 
     wc.on("page-title-updated", (_event, title) => {
@@ -279,6 +314,7 @@ export class MiniSession {
       tab.favicon = null;
       tab.url = url;
       this.applyZoom(tab);
+      if (!tab.favicon) void this.captureFavicon(tab, []);
       tab.isStartPage = false;
       this.onState();
     });
@@ -386,29 +422,52 @@ export class MiniSession {
    * a site the user just loaded, so this tells no one anything new — unlike
    * asking a favicon service, which would hand over the browsing history.
    */
-  private async captureFavicon(tab: TabRecord, iconUrl: string | undefined): Promise<void> {
-    if (!iconUrl || tab.isStartPage) return;
+  private async captureFavicon(tab: TabRecord, icons: string[]): Promise<void> {
+    if (tab.isStartPage) return;
+
+    // The reported icons first, then the conventional path. A site whose
+    // declared icon 404s or redirects usually still serves /favicon.ico.
+    const candidates = [...icons];
+    try {
+      const root = new URL(tab.url);
+      candidates.push(new URL("/favicon.ico", root).href);
+    } catch {
+      // Not a URL we can resolve against; the declared icons are all we have.
+    }
+
+    for (const candidate of candidates) {
+      const data = await this.fetchIcon(candidate);
+      if (!data || tab.view?.webContents.isDestroyed()) continue;
+      if (tab.favicon === data) return;
+      tab.favicon = data;
+      this.onState();
+      return;
+    }
+  }
+
+  private async fetchIcon(iconUrl: string): Promise<string | null> {
     try {
       const ses = await this.guestSession();
-      const response = await ses.fetch(iconUrl);
-      if (!response.ok) return;
-
-      const type = response.headers.get("content-type") ?? "image/png";
-      if (!type.startsWith("image/")) return;
+      // Without credentials the session's cookies are left out, so an icon
+      // behind a login redirects to HTML and looks like a broken image.
+      const response = await ses.fetch(iconUrl, { credentials: "include" });
+      if (!response.ok) return null;
 
       const bytes = Buffer.from(await response.arrayBuffer());
       // Keeps a stray multi-megabyte "icon" out of the state we ship to the
       // renderer and out of saved bookmarks.
-      if (bytes.byteLength === 0 || bytes.byteLength > 64 * 1024) return;
+      if (bytes.byteLength === 0 || bytes.byteLength > 64 * 1024) return null;
 
-      const next = `data:${type};base64,${bytes.toString("base64")}`;
-      if (tab.favicon === next) return;
-      tab.favicon = next;
-      this.onState();
+      const type = imageTypeOf(bytes, response.headers.get("content-type"));
+      if (!type) return null;
+
+      return `data:${type};base64,${bytes.toString("base64")}`;
     } catch {
       // A missing icon is not worth surfacing; the letter badge covers it.
+      return null;
     }
   }
+
 
   private moveTab(id: string, toIndex: number): void {
     const from = this.order.indexOf(id);

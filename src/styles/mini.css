@@ -105,7 +105,21 @@ body,
   line-height: 1;
 }
 
+.mini-site-icon-mark {
+  box-sizing: border-box;
+  border: 2.5px solid #7c7c85;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.mini-tab-active .mini-site-icon-mark {
+  border-color: #d4d4d8;
+}
+
+/* display:flex centres the letter badge, but on a replaced element it collapses
+   the image's own box — an <img> needs to stay a block. */
 .mini-site-icon-img {
+  display: block;
   background: transparent;
   object-fit: contain;
 }
@@ -618,6 +632,19 @@ body,
   font-weight: 600;
 }
 
+.mini-start-tile-badge.mini-site-icon-mark {
+  box-sizing: border-box;
+  border: 2.5px solid #7c7c85;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.mini-tab-active .mini-site-icon-mark {
+  border-color: #d4d4d8;
+}
+
+/* Only the big start-page tiles inset their icon; scoped, or every 16px
+   favicon loses 12px of its 16 to padding and renders as a speck. */
 .mini-start-tile-badge.mini-site-icon-img {
   padding: 6px;
 }

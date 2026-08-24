@@ -84,7 +84,8 @@ export function TabStrip({
                 <SiteIcon
                   favicon={tab.favicon}
                   url={tab.url}
-                  title={tab.isStartPage ? "New tab" : tab.title}
+                  title={tab.title}
+                  isStartPage={tab.isStartPage}
                 />
               ) : null}
               <span className="mini-tab-title">
