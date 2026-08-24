@@ -38,3 +38,9 @@ test("macOS tooling automatically selects a standard full Xcode installation", (
   const environment = platformEnvironment({}, "darwin", (path) => path === "/Applications/Xcode.app/Contents/Developer");
   assert.equal(environment.DEVELOPER_DIR, "/Applications/Xcode.app/Contents/Developer");
 });
+
+test("macOS doctor checks for Xcode's separately installed Metal toolchain", () => {
+  const source = readFileSync(resolve("scripts/chromium.mjs"), "utf8");
+  assert.match(source, /xcrun", \["--find", "metal"\]/);
+  assert.match(source, /xcodebuild -downloadComponent MetalToolchain/);
+});

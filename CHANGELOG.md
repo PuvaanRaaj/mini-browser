@@ -13,6 +13,8 @@ marked as unreleased.
 - Pinned Chromium 152.0.7977.54 to an exact upstream commit.
 - Added deterministic out-of-tree checkout, sync, GN generation, and build
   commands for the macOS and Windows workstreams.
+- Added automatic full-Xcode selection and a preflight check for Xcode's
+  separately distributed Metal compiler on macOS.
 - Added repeated clean-profile release gates for startup, navigation, memory,
   idle CPU, energy, security, and compatibility.
 - Extended the market benchmark so the future Minimal Chromium executable is

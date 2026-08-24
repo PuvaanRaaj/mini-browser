@@ -77,6 +77,10 @@ function doctor(config, { dryRun }) {
       const detail = `${probe.stderr ?? probe.stdout ?? ""}`.trim();
       throw new Error(`Full Xcode is required for Chromium macOS builds.${detail ? ` ${detail}` : ""}`);
     }
+    const metalProbe = spawnSync("xcrun", ["--find", "metal"], { env: environment, stdio: "ignore" });
+    if (metalProbe.status !== 0) {
+      throw new Error("Xcode's Metal toolchain is required. Run: xcodebuild -downloadComponent MetalToolchain");
+    }
   }
   const available = process.platform === "win32" ? null : freeDiskGb(config.workspace);
   if (available !== null && available < manifest.minimumFreeDiskGb) {

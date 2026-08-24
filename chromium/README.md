@@ -12,6 +12,13 @@ npm run chromium:gen
 npm run chromium:build
 ```
 
+On macOS, install full Xcode and its separately distributed Metal compiler. The
+doctor reports the exact command when that component is missing:
+
+```bash
+xcodebuild -downloadComponent MetalToolchain
+```
+
 Set `MINIMAL_CHROMIUM_WORKSPACE` to override the default sibling directory
 `../minimal-chromium-workspace`. The bootstrap is pinned to the exact version
 and revision in `manifest.json`; it never follows Chromium `main` implicitly.
