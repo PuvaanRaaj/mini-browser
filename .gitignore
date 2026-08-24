@@ -16,6 +16,7 @@
 # production
 /build
 /.build/
+/.benchmarks/
 /out/
 /public/
 /release/

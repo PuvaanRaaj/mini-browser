@@ -18,6 +18,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "check:bundle": "node scripts/check-bundle.mjs",
+    "benchmark": "electron-vite build && node scripts/benchmark.mjs",
+    "benchmark:market": "node scripts/benchmark-market.mjs",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "node scripts/prepare-mac-entitlements.mjs && electron-vite build && electron-builder --mac",
     "open:mac": "node scripts/open-mac.mjs",
