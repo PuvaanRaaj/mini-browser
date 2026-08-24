@@ -18,6 +18,7 @@ import { WebAuthnAccountDialog } from "@/components/webauthn-account-dialog";
 import { useMiniBrowser } from "@/hooks/use-mini-browser";
 import { useBookmarks } from "@/lib/bookmarks";
 import { readSession, saveSession, useSettings } from "@/lib/settings";
+import { migrateLegacyAuthenticatorStorage } from "@/lib/legacy-vault-migration";
 import type { BrowserCommand, LayoutRect } from "@/lib/types";
 
 export function MiniApp() {
@@ -120,6 +121,14 @@ export function MiniApp() {
   useEffect(() => {
     window.mini?.persistSession(settings.persistSession);
   }, [settings.persistSession]);
+
+  useEffect(() => {
+    const vault = window.mini?.vault;
+    if (!vault) return;
+    void vault.status().then((status) => {
+      if (status.available) return migrateLegacyAuthenticatorStorage(vault);
+    });
+  }, []);
 
   // Keep the native caption buttons on the same surface the renderer shows.
   useEffect(() => {
@@ -370,7 +379,10 @@ export function MiniApp() {
                   <Suspense
                     fallback={<div className="mini-sheet-loading">Loading authenticator…</div>}
                   >
-                    <AuthenticatorPanel onClose={() => setAuthenticatorOpen(false)} />
+                    <AuthenticatorPanel
+                      activeUrl={activeTab?.url ?? ""}
+                      onClose={() => setAuthenticatorOpen(false)}
+                    />
                   </Suspense>
                 ) : null}
                 {settingsOpen ? (

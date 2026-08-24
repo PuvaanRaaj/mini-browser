@@ -1,9 +1,11 @@
 import type { BrowserCommand, BrowserState, LayoutRect } from "../lib/types";
+import type { VaultAPI } from "../lib/vault-types";
 
 declare global {
   interface Window {
     mini?: {
       platform: NodeJS.Platform;
+      vault: VaultAPI;
       ready: () => Promise<BrowserState | null>;
       command: (command: BrowserCommand) => Promise<BrowserState>;
       layout: (rect: LayoutRect) => void;

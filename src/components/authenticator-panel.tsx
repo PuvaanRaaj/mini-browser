@@ -1,4 +1,4 @@
-import { FileUpIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { FileUpIcon, KeyRoundIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AddAccountDialog } from "@/components/add-account-dialog";
@@ -7,21 +7,17 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createDemoAccount, useAccounts } from "@/lib/accounts";
 import { parseAuthenticatorBackup } from "@/lib/import-backup";
-import { accountTitle, generateCode, remainingSeconds } from "@/lib/totp";
+import { accountTitle } from "@/lib/totp";
+import type { PasswordEntry } from "@/lib/vault-types";
 
-export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
-  const [accounts, persist] = useAccounts();
+export function AuthenticatorPanel({ onClose, activeUrl }: { onClose: () => void; activeUrl: string }) {
+  const { accounts, status, error, importAccounts, remove } = useAccounts();
+  const [section, setSection] = useState<"codes" | "passwords">("codes");
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const importBackup = async (file: File) => {
     setImportMessage(null);
@@ -33,19 +29,11 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
         );
       }
 
-      const existing = new Set(accounts.map(accountKey));
-      const newAccounts = result.accounts.filter((account) => {
-        const key = accountKey(account);
-        if (existing.has(key)) return false;
-        existing.add(key);
-        return true;
-      });
-
-      if (newAccounts.length > 0) persist([...accounts, ...newAccounts]);
+      const imported = await importAccounts(result.accounts);
       const skipped = result.skipped > 0 ? ` ${result.skipped} skipped.` : "";
       setImportMessage(
-        newAccounts.length > 0
-          ? `Imported ${newAccounts.length} account${newAccounts.length === 1 ? "" : "s"}.${skipped} Delete the backup file when finished.`
+        imported > 0
+          ? `Imported ${imported} account${imported === 1 ? "" : "s"}.${skipped} Delete the backup file when finished.`
           : `All accounts were already present.${skipped}`,
       );
     } catch (caught) {
@@ -69,7 +57,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
         <div>
           <p className="text-sm font-medium text-foreground">Authenticator</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            TOTP codes stay on this device.
+            Passwords and TOTP secrets use your OS keychain.
           </p>
         </div>
         <Button variant="ghost" size="icon-xs" onClick={onClose} aria-label="Close">
@@ -77,7 +65,19 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
         </Button>
       </div>
 
-      <div className="flex gap-2 px-4 pb-3">
+      <div className="flex gap-1 px-4 pb-3" role="tablist">
+        <Button size="sm" variant={section === "codes" ? "default" : "outline"} onClick={() => setSection("codes")}>Codes</Button>
+        <Button size="sm" variant={section === "passwords" ? "default" : "outline"} onClick={() => setSection("passwords")}>Passwords</Button>
+      </div>
+
+      {!status.available ? (
+        <p className="px-4 pb-3 text-[11px] leading-4 text-destructive" role="alert">
+          {status.message}
+        </p>
+      ) : null}
+      {error ? <p className="px-4 pb-3 text-[11px] text-destructive" role="alert">{error}</p> : null}
+
+      {section === "codes" ? <><div className="flex gap-2 px-4 pb-3">
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -97,6 +97,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
           variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
+          disabled={!status.available}
           data-agent="import-2fa-backup"
           aria-label="Import authenticator backup"
           title="Import backup"
@@ -104,7 +105,7 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
           <FileUpIcon />
           Import
         </Button>
-        <Button data-agent="add-2fa-account" size="icon-sm" onClick={() => setDialogOpen(true)} aria-label="Add account">
+        <Button data-agent="add-2fa-account" size="icon-sm" disabled={!status.available} onClick={() => setDialogOpen(true)} aria-label="Add account">
           <PlusIcon />
         </Button>
       </div>
@@ -119,13 +120,13 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
           <EmptyState
             hasAccounts={accounts.length > 0}
             onAdd={() => setDialogOpen(true)}
-            onDemo={() => persist([...accounts, createDemoAccount()])}
+            onDemo={() => void importAccounts([createDemoAccount()])}
           />
         ) : (
           <ul className="space-y-1 px-2 pb-4">
             {filtered.map((account) => {
-              const code = generateCode(account, now);
-              const remaining = remainingSeconds(account.period, now);
+              const code = account.code;
+              const remaining = account.remaining;
               return (
                 <li key={account.id}>
                   <button
@@ -158,13 +159,13 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
                       className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
                       onClick={(event) => {
                         event.stopPropagation();
-                        persist(accounts.filter((item) => item.id !== account.id));
+                        void remove(account.id);
                       }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           event.stopPropagation();
-                          persist(accounts.filter((item) => item.id !== account.id));
+                          void remove(account.id);
                         }
                       }}
                       aria-label={`Delete ${accountTitle(account)}`}
@@ -182,25 +183,103 @@ export function AuthenticatorPanel({ onClose }: { onClose: () => void }) {
       <AddAccountDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onAdd={(account) => persist([...accounts, account])}
+        onAdd={(account) => void importAccounts([account])}
       />
+      </> : <PasswordManager activeUrl={activeUrl} available={status.available} />}
     </aside>
   );
 }
 
-function accountKey(account: {
-  issuer: string;
-  label: string;
-  secret: string;
-  algorithm: string;
-  digits: number;
-  period: number;
-}): string {
-  return [
-    account.issuer.toLowerCase(),
-    account.label.toLowerCase(),
-    account.secret,
-  ].join("\u0000");
+function PasswordManager({ activeUrl, available }: { activeUrl: string; available: boolean }) {
+  const [entries, setEntries] = useState<PasswordEntry[]>([]);
+  const [origin, setOrigin] = useState(() => originOf(activeUrl));
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+
+  const refresh = async () => {
+    if (!available || !window.mini) return;
+    setEntries(await window.mini.vault.listPasswords());
+  };
+
+  useEffect(() => {
+    void refresh().catch((caught) => setMessage(messageOf(caught)));
+  }, [available]);
+
+  useEffect(() => {
+    const current = originOf(activeUrl);
+    if (current) setOrigin(current);
+  }, [activeUrl]);
+
+  const save = async () => {
+    if (!window.mini) return;
+    try {
+      await window.mini.vault.savePassword({ origin, username, password });
+      setPassword("");
+      setMessage("Password saved in the OS-backed vault.");
+      await refresh();
+    } catch (caught) {
+      setMessage(messageOf(caught));
+    }
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="space-y-2 px-4 pb-4">
+        <Input value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="https://example.com" disabled={!available} />
+        <Input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Username or email" autoComplete="off" disabled={!available} />
+        <Input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" type="password" autoComplete="new-password" disabled={!available} />
+        <Button className="w-full" disabled={!available || !origin || !username || !password} onClick={() => void save()}>
+          <KeyRoundIcon /> Save password
+        </Button>
+        {message ? <p className="text-[11px] leading-4 text-muted-foreground" role="status">{message}</p> : null}
+      </div>
+      <ScrollArea className="min-h-0 flex-1">
+        {entries.length === 0 ? (
+          <p className="px-5 py-8 text-center text-xs text-muted-foreground">No saved passwords.</p>
+        ) : (
+          <ul className="space-y-1 px-2 pb-4">
+            {entries.map((entry) => (
+              <li key={entry.id} className="flex items-center gap-2 rounded-xl px-2 py-2 hover:bg-accent">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => void window.mini?.vault.fillPassword(entry.id).then(
+                    () => setMessage(`Filled ${entry.username} on ${entry.origin}.`),
+                    (caught) => setMessage(messageOf(caught)),
+                  )}
+                >
+                  <span className="block truncate text-xs text-foreground">{entry.username}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">{entry.origin}</span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={`Delete password for ${entry.username}`}
+                  onClick={() => void window.mini?.vault.deletePassword(entry.id).then(refresh)}
+                >
+                  <Trash2Icon />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+function originOf(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" ? parsed.origin : "";
+  } catch {
+    return "";
+  }
+}
+
+function messageOf(value: unknown): string {
+  return value instanceof Error ? value.message : "The secure vault operation failed.";
 }
 
 function formatCode(code: string): string {

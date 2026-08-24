@@ -1,57 +1,78 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { DEMO_ACCOUNT, type AuthenticatorAccount } from "@/lib/totp";
+import type { AuthenticatorCode, VaultStatus } from "@/lib/vault-types";
+import { migrateLegacyAuthenticatorStorage } from "@/lib/legacy-vault-migration";
 
-const STORAGE_KEY = "mini.authenticator.accounts.v1";
+const LOCKED: VaultStatus = {
+  available: false,
+  backend: "unavailable",
+  message: "The secure vault is only available in the desktop app.",
+};
 
-function readRaw(): string {
-  if (typeof window === "undefined") return "[]";
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) ?? "[]";
-  } catch {
-    return "[]";
-  }
-}
+export function useAccounts() {
+  const [accounts, setAccounts] = useState<AuthenticatorCode[]>([]);
+  const [status, setStatus] = useState<VaultStatus>(LOCKED);
+  const [error, setError] = useState<string | null>(null);
 
-function parseAccounts(raw: string): AuthenticatorAccount[] {
-  try {
-    const parsed = JSON.parse(raw) as AuthenticatorAccount[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) => item && typeof item.secret === "string");
-  } catch {
-    return [];
-  }
-}
-
-function subscribe(onStoreChange: () => void) {
-  const handler = () => onStoreChange();
-  window.addEventListener("storage", handler);
-  window.addEventListener("mini-accounts", handler);
-  return () => {
-    window.removeEventListener("storage", handler);
-    window.removeEventListener("mini-accounts", handler);
-  };
-}
-
-export function useAccounts(): [
-  AuthenticatorAccount[],
-  (next: AuthenticatorAccount[]) => void,
-] {
-  const raw = useSyncExternalStore(subscribe, readRaw, () => "[]");
-  const accounts = parseAccounts(raw);
-
-  const setAccounts = useCallback((next: AuthenticatorAccount[]) => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event("mini-accounts"));
+  const refresh = useCallback(async () => {
+    const vault = window.mini?.vault;
+    if (!vault) return;
+    try {
+      const nextStatus = await vault.status();
+      setStatus(nextStatus);
+      if (!nextStatus.available) {
+        setAccounts([]);
+        return;
+      }
+      setAccounts(await vault.listAuthenticatorCodes());
+      setError(null);
+    } catch (caught) {
+      setError(messageOf(caught));
+    }
   }, []);
 
-  return [accounts, setAccounts];
+  useEffect(() => {
+    let cancelled = false;
+    const start = async () => {
+      const vault = window.mini?.vault;
+      if (!vault) return;
+      const nextStatus = await vault.status();
+      if (cancelled) return;
+      setStatus(nextStatus);
+      if (nextStatus.available) await migrateLegacyAuthenticatorStorage(vault);
+      if (!cancelled) await refresh();
+    };
+    void start().catch((caught) => !cancelled && setError(messageOf(caught)));
+    const timer = window.setInterval(() => void refresh(), 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [refresh]);
+
+  const importAccounts = useCallback(async (next: AuthenticatorAccount[]) => {
+    const vault = window.mini?.vault;
+    if (!vault) throw new Error(LOCKED.message!);
+    const added = await vault.importAuthenticatorAccounts(next);
+    await refresh();
+    return added;
+  }, [refresh]);
+
+  const remove = useCallback(async (id: string) => {
+    const vault = window.mini?.vault;
+    if (!vault) throw new Error(LOCKED.message!);
+    await vault.deleteAuthenticatorAccount(id);
+    await refresh();
+  }, [refresh]);
+
+  return { accounts, status, error, importAccounts, remove };
 }
 
 export function createDemoAccount(): AuthenticatorAccount {
-  return {
-    ...DEMO_ACCOUNT,
-    id: crypto.randomUUID(),
-    createdAt: Date.now(),
-  };
+  return { ...DEMO_ACCOUNT, id: crypto.randomUUID(), createdAt: Date.now() };
+}
+
+function messageOf(value: unknown): string {
+  return value instanceof Error ? value.message : "Could not open the secure vault.";
 }

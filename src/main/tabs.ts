@@ -213,6 +213,33 @@ export class MiniSession {
     return image.toPNG();
   }
 
+  async fillPassword(entry: { origin: string; username: string; password: string }): Promise<void> {
+    const view = this.activeView();
+    if (!view) throw new Error("There is no active website to fill.");
+    const current = new URL(view.webContents.getURL());
+    if (current.protocol !== "https:" || current.origin !== entry.origin) {
+      throw new Error("This password belongs to a different website.");
+    }
+    const username = JSON.stringify(entry.username);
+    const password = JSON.stringify(entry.password);
+    await view.webContents.executeJavaScript(`(() => {
+      const passwordInput = document.querySelector('input[type="password"]');
+      if (!(passwordInput instanceof HTMLInputElement)) throw new Error("No password field found.");
+      const usernameInput = document.querySelector(
+        'input[autocomplete="username"], input[type="email"], input[name*="user" i], input[name*="email" i], input[type="text"]',
+      );
+      const setValue = (input, value) => {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        setter?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      if (usernameInput instanceof HTMLInputElement) setValue(usernameInput, ${username});
+      setValue(passwordInput, ${password});
+      passwordInput.focus();
+    })()`, true);
+  }
+
   destroy(): void {
     this.cancelWebAuthnPrompt();
     for (const tab of this.tabs.values()) {

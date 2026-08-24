@@ -4,15 +4,19 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  safeStorage,
   type IpcMainEvent,
   type IpcMainInvokeEvent,
 } from "electron";
 
 import type { BrowserCommand, LayoutRect } from "../lib/types";
+import type { AuthenticatorAccount } from "../lib/totp";
+import type { PasswordInput } from "../lib/vault-types";
 import { AgentServer } from "./agent-server";
 import { installMenu } from "./menu";
 import { isWsl, rendererSandboxEnabled } from "./security";
 import { MiniSession, routeBrowserShortcut } from "./tabs";
+import { SecureVault } from "./vault";
 import { readPackagedWebAuthnConfig } from "./webauthn";
 
 if (isWsl()) {
@@ -25,6 +29,7 @@ if (isWsl()) {
 let mainWindow: BrowserWindow | null = null;
 let mini: MiniSession | null = null;
 let agentServer: AgentServer | null = null;
+let vault: SecureVault | null = null;
 
 app.setName("Minimal");
 app.setAboutPanelOptions({
@@ -99,6 +104,12 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   app.setAppUserModelId("app.minimal.browser");
+  vault = new SecureVault(join(app.getPath("userData"), "vault.bin"), {
+    isEncryptionAvailable: () => safeStorage.isEncryptionAvailable(),
+    encryptString: (value) => safeStorage.encryptString(value),
+    decryptString: (value) => safeStorage.decryptString(value),
+    backend: () => process.platform === "linux" ? safeStorage.getSelectedStorageBackend() : "os_keychain",
+  });
 
   // Electron ships the Touch ID / Secure Enclave platform authenticator dark
   // by default: until this is called, passkey prompts never appear and sites
@@ -150,6 +161,45 @@ app.whenReady().then(() => {
         : { color: "#0a0a0b", symbolColor: "#fafafa", height: 44 },
     );
   });
+  ipcMain.handle("mini:vault-status", (event) => {
+    assertTrustedRenderer(event);
+    return requiredVault().status();
+  });
+  ipcMain.handle("mini:vault-list-totp", (event) => {
+    assertTrustedRenderer(event);
+    return requiredVault().listAuthenticatorCodes();
+  });
+  ipcMain.handle("mini:vault-import-totp", (event, accounts: AuthenticatorAccount[]) => {
+    assertTrustedRenderer(event);
+    if (!Array.isArray(accounts) || accounts.length > 500) throw new Error("Invalid account import.");
+    return requiredVault().importAuthenticatorAccounts(accounts);
+  });
+  ipcMain.handle("mini:vault-delete-totp", (event, id: string) => {
+    assertTrustedRenderer(event);
+    if (typeof id !== "string") throw new Error("Invalid account ID.");
+    return requiredVault().deleteAuthenticatorAccount(id);
+  });
+  ipcMain.handle("mini:vault-list-passwords", (event) => {
+    assertTrustedRenderer(event);
+    return requiredVault().listPasswords();
+  });
+  ipcMain.handle("mini:vault-save-password", (event, input: PasswordInput) => {
+    assertTrustedRenderer(event);
+    return requiredVault().savePassword(input);
+  });
+  ipcMain.handle("mini:vault-delete-password", (event, id: string) => {
+    assertTrustedRenderer(event);
+    if (typeof id !== "string") throw new Error("Invalid password ID.");
+    return requiredVault().deletePassword(id);
+  });
+  ipcMain.handle("mini:vault-fill-password", async (event, id: string) => {
+    assertTrustedRenderer(event);
+    if (typeof id !== "string") throw new Error("Invalid password ID.");
+    const entry = await requiredVault().passwordSecret(id);
+    if (!entry) throw new Error("Password entry not found.");
+    if (!mini) throw new Error("Minimal is not running.");
+    await mini.fillPassword(entry);
+  });
 
   installMenu(
     () => mini,
@@ -166,6 +216,15 @@ app.whenReady().then(() => {
 function isTrustedRenderer(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
   const window = mainWindow;
   return Boolean(window && !window.isDestroyed() && event.sender === window.webContents);
+}
+
+function assertTrustedRenderer(event: IpcMainEvent | IpcMainInvokeEvent): void {
+  if (!isTrustedRenderer(event)) throw new Error("Untrusted renderer.");
+}
+
+function requiredVault(): SecureVault {
+  if (!vault) throw new Error("Secure vault is not ready.");
+  return vault;
 }
 
 // Give the cookie store a chance to land before the process goes away, or a
