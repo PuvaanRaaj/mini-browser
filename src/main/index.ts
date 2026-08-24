@@ -11,9 +11,10 @@ import {
 import type { BrowserCommand, LayoutRect } from "../lib/types";
 import { AgentServer } from "./agent-server";
 import { installMenu } from "./menu";
+import { isWsl, rendererSandboxEnabled } from "./security";
 import { MiniSession, routeBrowserShortcut } from "./tabs";
 
-if (process.platform === "linux") {
+if (isWsl()) {
   app.commandLine.appendSwitch("no-sandbox");
   // WSL2 hands out a /dev/shm that Chromium's renderers cannot map; fall back to
   // temp files so pages render instead of dying on startup.
@@ -54,7 +55,7 @@ function createWindow(): void {
       // The local chrome renderer needs no Node privileges. Keep it sandboxed
       // everywhere Chromium can support it; Linux/WSL already opts out above
       // because its shared-memory setup cannot start a sandboxed renderer.
-      sandbox: process.platform !== "linux",
+      sandbox: rendererSandboxEnabled(),
       contextIsolation: true,
       nodeIntegration: false,
     },

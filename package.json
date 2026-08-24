@@ -24,7 +24,7 @@
     "site": "bun website/server.ts",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "electron-vite preview",
-    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts",
+    "test": "npx tsx src/lib/totp.test.ts && npx tsx src/lib/blocklist.test.ts && npx tsx src/lib/import-backup.test.ts && npx tsx src/lib/navigation-error.test.ts && npx tsx src/lib/url.test.ts && npx tsx src/main/security.test.ts",
     "lint": "eslint src",
     "dist:win": "electron-vite build && electron-builder --win"
   },

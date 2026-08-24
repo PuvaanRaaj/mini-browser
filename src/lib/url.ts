@@ -6,7 +6,11 @@ export function resolveNavigation(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return "";
 
-  if (/^(https?|file|about):/i.test(trimmed)) return trimmed;
+  if (/^https?:/i.test(trimmed)) return trimmed;
+  if (/^about:blank$/i.test(trimmed)) return "about:blank";
+  // Never turn local-file or active-content schemes into browser navigation.
+  // Unknown schemes are rejected instead of being passed to Chromium or the OS.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return "";
   if (trimmed.startsWith("//")) return `https:${trimmed}`;
   if (LOCAL_HOST.test(trimmed)) return `http://${trimmed}`;
   if (DOMAIN_LIKE.test(trimmed) && !/\s/.test(trimmed)) {
