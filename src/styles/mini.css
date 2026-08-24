@@ -28,6 +28,7 @@ body,
 }
 
 .mini-chrome {
+  position: relative;
   z-index: 20;
   display: flex;
   flex-shrink: 0;
@@ -44,7 +45,108 @@ body,
   padding-left: 78px;
 }
 
+.mini-cats {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mini-cat {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  display: block;
+  /* Light enough to read against #0a0a0b, dim enough to stay scenery. */
+  color: #3f3f46;
+  animation: mini-cat-walk 46s linear infinite;
+}
+
+.mini-cat svg {
+  display: block;
+  width: calc(40px * var(--cat-scale));
+  height: calc(24px * var(--cat-scale));
+  fill: currentColor;
+  animation: mini-cat-bob 0.42s ease-in-out infinite;
+}
+
+/* The kitten trails a little behind and takes quicker steps. */
+.mini-cat-kitten {
+  color: #35353c;
+  animation-delay: 1.6s;
+}
+
+.mini-cat-kitten svg {
+  animation-duration: 0.32s;
+}
+
+.mini-cat-leg {
+  transform-origin: 50% 0;
+  animation: mini-cat-step 0.42s ease-in-out infinite;
+}
+
+.mini-cat-leg-2,
+.mini-cat-leg-3 {
+  animation-delay: 0.21s;
+}
+
+.mini-cat-tail {
+  transform-origin: 6px 16px;
+  animation: mini-cat-tail 1.9s ease-in-out infinite;
+}
+
+@keyframes mini-cat-walk {
+  /* Most of the cycle is spent off-screen: a pass now and then is a surprise,
+     a permanent parade is a distraction. */
+  0% {
+    transform: translateX(-48px);
+  }
+  22%,
+  100% {
+    transform: translateX(calc(100vw + 48px));
+  }
+}
+
+@keyframes mini-cat-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.6px);
+  }
+}
+
+@keyframes mini-cat-step {
+  0%,
+  100% {
+    transform: rotate(11deg);
+  }
+  50% {
+    transform: rotate(-11deg);
+  }
+}
+
+@keyframes mini-cat-tail {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-cats {
+    display: none;
+  }
+}
+
 .mini-tabs {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-width: 0;
   flex-shrink: 1;
@@ -163,6 +265,8 @@ body,
 }
 
 .mini-nav {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -182,6 +286,8 @@ body,
 }
 
 .mini-url-form {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   flex: 1;
   -webkit-app-region: no-drag;
@@ -977,6 +1083,8 @@ body,
 }
 
 .mini-ext-tray {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-shrink: 0;
   align-items: center;

@@ -23,6 +23,8 @@ export type MiniSettings = {
   restoreSession: boolean;
   /** Keep cookies and logins on disk between launches. Off by default. */
   persistSession: boolean;
+  /** The cat and kitten that pad along the toolbar. */
+  cats: boolean;
 };
 
 export type Bookmark = {

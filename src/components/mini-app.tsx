@@ -299,6 +299,7 @@ export function MiniApp() {
               onFocusMode={() => setFocusMode(true)}
               onZoomReset={() => dispatch({ type: "zoomReset" })}
               onMove={(id, toIndex) => dispatch({ type: "moveTab", id, toIndex })}
+              cats={settings.cats}
             />
 
             {showFavoritesBar ? (

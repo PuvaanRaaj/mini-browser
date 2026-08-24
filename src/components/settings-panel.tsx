@@ -106,6 +106,21 @@ export function SettingsPanel({
         </Row>
 
         <Row
+          title="Toolbar cats"
+          hint="A cat and a kitten pad along the toolbar now and then. They stay behind the controls, so they never cover the address bar."
+        >
+          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-foreground">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-foreground"
+              checked={settings.cats}
+              onChange={(event) => onChange("cats", event.target.checked)}
+            />
+            Let them wander
+          </label>
+        </Row>
+
+        <Row
           title="Stay signed in"
           hint="Keeps cookies and logins on disk so sites remember you next launch. Off by default: a throwaway in-memory profile is what makes this browser private. Switching either way signs you out and reopens your tabs."
         >

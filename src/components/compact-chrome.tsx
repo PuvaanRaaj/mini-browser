@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState, type RefObject } from "react";
 
+import { HeaderCats } from "@/components/header-cats";
 import { TabStrip } from "@/components/tab-strip";
 import { modLabel } from "@/lib/mod";
 import type { FavoritesMode, TabInfo, TabPosition } from "@/lib/types";
@@ -43,6 +44,7 @@ export function CompactChrome({
   onFocusMode,
   onZoomReset,
   onMove,
+  cats,
 }: {
   tabs: TabInfo[];
   activeTab: TabInfo | null;
@@ -68,6 +70,7 @@ export function CompactChrome({
   onFocusMode: () => void;
   onZoomReset: () => void;
   onMove: (id: string, toIndex: number) => void;
+  cats: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
@@ -76,6 +79,7 @@ export function CompactChrome({
 
   return (
     <header className={cn("mini-chrome", isMac && "mini-chrome-mac")}>
+      {cats ? <HeaderCats /> : null}
       {tabPosition === "top" ? (
         <TabStrip
           tabs={tabs}

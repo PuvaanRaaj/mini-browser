@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: MiniSettings = {
   favoritesMode: "always",
   restoreSession: false,
   persistSession: false,
+  cats: true,
 };
 
 function readRaw(): string {
@@ -32,6 +33,7 @@ function parseSettings(raw: string): MiniSettings {
           : "always",
       restoreSession: parsed.restoreSession === true,
       persistSession: parsed.persistSession === true,
+      cats: parsed.cats !== false,
     };
   } catch {
     return DEFAULT_SETTINGS;
