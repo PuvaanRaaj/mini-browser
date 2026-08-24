@@ -27,6 +27,15 @@ export function validateManifest(value = manifest) {
   return value;
 }
 
+export function platformEnvironment(environment = process.env, platform = process.platform, pathExists = existsSync) {
+  const result = { ...environment };
+  const standardXcode = "/Applications/Xcode.app/Contents/Developer";
+  if (platform === "darwin" && !result.DEVELOPER_DIR && pathExists(standardXcode)) {
+    result.DEVELOPER_DIR = standardXcode;
+  }
+  return result;
+}
+
 function run(command, args, options = {}) {
   const rendered = [command, ...args].map((part) => JSON.stringify(part)).join(" ");
   if (options.dryRun) {
@@ -57,12 +66,13 @@ function freeDiskGb(path) {
 
 function doctor(config, { dryRun }) {
   validateManifest();
+  const environment = platformEnvironment();
   for (const command of ["git", "python3"]) {
-    const probe = spawnSync(command, ["--version"], { stdio: "ignore", shell: process.platform === "win32" });
+    const probe = spawnSync(command, ["--version"], { env: environment, stdio: "ignore", shell: process.platform === "win32" });
     if (probe.status !== 0) throw new Error(`${command} is required.`);
   }
   if (process.platform === "darwin") {
-    const probe = spawnSync("xcodebuild", ["-version"], { encoding: "utf8" });
+    const probe = spawnSync("xcodebuild", ["-version"], { env: environment, encoding: "utf8" });
     if (probe.status !== 0) {
       const detail = `${probe.stderr ?? probe.stdout ?? ""}`.trim();
       throw new Error(`Full Xcode is required for Chromium macOS builds.${detail ? ` ${detail}` : ""}`);
@@ -87,12 +97,20 @@ function bootstrap(config, options) {
   if (!existsSync(config.depotTools)) {
     run("git", ["clone", manifest.depotToolsRepository, config.depotTools], options);
   }
+  ensureDepotTools(config, options);
   if (!existsSync(config.source)) {
     const gclientConfig = `solutions = [\n  {\n    "name": "src",\n    "url": "${manifest.sourceRepository}",\n    "deps_file": "DEPS",\n    "managed": False,\n    "custom_deps": {},\n    "custom_vars": { "checkout_pgo_profiles": True },\n    "safesync_url": ""\n  }\n]\ntarget_os = []\n`;
     if (options.dryRun) console.log(`[dry-run] write ${resolve(config.workspace, ".gclient")}`);
     else writeFileSync(resolve(config.workspace, ".gclient"), gclientConfig, { flag: "wx" });
   }
   sync(config, { ...options, allowMissingSource: true });
+}
+
+function ensureDepotTools(config, options) {
+  const command = process.platform === "win32"
+    ? resolve(config.depotTools, "bootstrap", "win_tools.bat")
+    : resolve(config.depotTools, "ensure_bootstrap");
+  run(command, [], { ...options, cwd: config.depotTools, env: toolEnvironment(config) });
 }
 
 function sync(config, options) {
@@ -130,7 +148,8 @@ function build(config, options) {
 }
 
 function toolEnvironment(config) {
-  return { ...process.env, PATH: `${config.depotTools}${delimiter}${process.env.PATH ?? ""}`, DEPOT_TOOLS_UPDATE: "0" };
+  const environment = platformEnvironment();
+  return { ...environment, PATH: `${config.depotTools}${delimiter}${environment.PATH ?? ""}`, DEPOT_TOOLS_UPDATE: "0" };
 }
 
 export function main(argv = process.argv.slice(2)) {
