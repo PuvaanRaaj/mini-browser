@@ -1,0 +1,9 @@
+is_debug = false
+is_component_build = true
+is_chrome_branded = false
+symbol_level = 1
+blink_symbol_level = 0
+v8_symbol_level = 0
+
+# Developer builds optimize iteration time. Never publish or benchmark this
+# component build: shared libraries make startup results unrepresentative.

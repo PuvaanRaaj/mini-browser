@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "measurement": {
+    "warmupRuns": 2,
+    "measuredRuns": 7,
+    "statistic": "median",
+    "sameMachineAndPowerState": true,
+    "cleanProfiles": true,
+    "localDeterministicPages": true
+  },
+  "releaseTargets": {
+    "coldStartupMs": "less_than_or_equal_to_best_competitor",
+    "warmStartupMs": "less_than_or_equal_to_best_competitor",
+    "firstNavigationMs": "less_than_or_equal_to_best_competitor",
+    "tenTabRssMb": "less_than_or_equal_to_best_competitor",
+    "tenTabIdleCpuPercent": "less_than_or_equal_to_best_competitor",
+    "controlledEnergyImpact": "less_than_or_equal_to_best_competitor"
+  },
+  "regressionLimits": {
+    "startupPercent": 5,
+    "navigationPercent": 5,
+    "rssPercent": 3,
+    "idleCpuPercentagePoints": 0.2,
+    "energyPercent": 5
+  },
+  "nonNegotiable": [
+    "sandbox_enabled",
+    "site_isolation_enabled",
+    "safe_browsing_or_documented_equivalent",
+    "web_platform_conformance_not_regressed",
+    "password_and_totp_secrets_os_encrypted"
+  ]
+}

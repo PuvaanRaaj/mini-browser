@@ -1,0 +1,11 @@
+is_debug = false
+is_component_build = false
+is_chrome_branded = false
+is_official_build = true
+symbol_level = 0
+blink_symbol_level = 0
+v8_symbol_level = 0
+
+# Keep Chromium's production optimization defaults. New flags belong here only
+# after `gn args --list` confirms they exist at the pinned revision and the
+# benchmark suite proves a release-level improvement.
