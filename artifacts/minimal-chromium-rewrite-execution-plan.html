@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Chromium Rewrite Execution Plan</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 960px; margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.6; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h2 { font-size: 1.3rem; margin-top: 2em; color: #0066cc; }
+    h3 { font-size: 1.05rem; margin-top: 1.5em; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; vertical-align: top; }
+    th { background: #f0f4ff; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.9em; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.875rem; line-height: 1.5; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .badge-high { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-medium { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-low { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    blockquote { border-left: 4px solid #0066cc; margin: 0; padding: 8px 16px; background: #f0f4ff; color: #333; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 4px 0; }
+    .meta { color: #666; font-size: 0.85em; margin-bottom: 2em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Minimal Chromium Rewrite Execution Plan</h1>
+    <p class="meta">25 August 2026 · Author: Puvaan · Context: PuvaanRaaj/mini-browser 2.x</p>
+    <blockquote>The objective is a standalone Chromium browser that wins measured workloads without weakening Chromium's sandbox, site isolation, compatibility, or secret storage. “Fastest” remains a release target until repeatable competitor measurements prove it.</blockquote>
+  </header>
+  <main>
+    <section>
+      <h2>Architecture decision</h2>
+      <p>Minimal 2.x will fork the complete unbranded Chromium browser at a pinned stable revision. Electron 1.x remains installable until profile migration, Google website sign-in, passkeys, password storage, TOTP, updates, and Windows packaging all pass release gates. The Chromium checkout remains out of tree; this repository owns a small manifest, build arguments, patches, product resources, benchmarks, and migration tooling.</p>
+    </section>
+    <section>
+      <h2>Execution phases</h2>
+      <table>
+        <thead><tr><th>Phase</th><th>Deliverable</th><th>Verification</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>0. Foundation</td><td>Pin Chromium stable, deterministic bootstrap, release GN configuration, identical competitor harness.</td><td>Manifest tests, doctor, GN argument validation, clean Chromium build.</td><td><span class="badge-low">Low</span></td></tr>
+          <tr><td>1. Minimal shell</td><td>Branding, compact chrome, tabs, address bar, favorites, focus mode, animations from the current UI.</td><td>Browser tests and screenshot parity on macOS and Windows.</td><td><span class="badge-medium">Medium</span></td></tr>
+          <tr><td>2. Identity and secrets</td><td>Normal Google website sessions, WebAuthn/passkeys, OS-backed password and TOTP vault, Firefox import.</td><td>Signed macOS and Windows authentication matrices; encrypted-at-rest inspection.</td><td><span class="badge-high">High</span></td></tr>
+          <tr><td>3. Resource control</td><td>Measured tab lifecycle, memory pressure response, background CPU limits, cache and timer policy.</td><td>Seven-run medians against Chrome and Firefox; battery test on controlled hardware.</td><td><span class="badge-high">High</span></td></tr>
+          <tr><td>4. Distribution</td><td>Signed/notarized macOS build, signed Windows installer, updater, rollback, profile migration.</td><td>Install N, migrate, update to N+1, rollback without data loss.</td><td><span class="badge-high">High</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Performance contract</h2>
+      <p>Every release measures cold and warm startup, first navigation, ten-tab load, resident memory, idle CPU, and controlled energy impact. Measurements use clean profiles, local deterministic pages, two warmups, and seven measured runs on the same machine and power state. A security or compatibility regression cannot be traded for a benchmark win.</p>
+      <p>The first Electron reference run on this Mac recorded 407.45 ms cold app-ready, 128.07 ms warm app-ready, approximately 1.15 GiB for ten tabs, and 0.58–1.04% sampled idle CPU. The existing market harness produced Chrome and Firefox data with a different startup boundary; those numbers must not be presented as direct wins until Minimal Chromium uses that identical external-browser harness.</p>
+    </section>
+    <section>
+      <h2>Where algorithms can help</h2>
+      <table>
+        <thead><tr><th>Candidate</th><th>Model</th><th>Guardrail</th></tr></thead>
+        <tbody>
+          <tr><td>Tab discard priority</td><td>Bounded score combining inactivity, reclaimable memory, revisit probability, reload cost, audio/capture/form state, and device pressure.</td><td>Never discard active, audible, capturing, downloading, unsaved-form, or explicitly protected tabs.</td></tr>
+          <tr><td>Cache admission</td><td>Admit when predicted reuse benefit exceeds memory, disk, network, and energy cost.</td><td>Partition by site and preserve Chromium privacy semantics.</td></tr>
+          <tr><td>Speculation</td><td>Origin-level transition probability with strict confidence and cost thresholds.</td><td>Disable on metered networks, low battery, private mode, and privacy-sensitive transitions.</td></tr>
+          <tr><td>Work scheduling</td><td>Deadline-aware prioritization and timer coalescing for invisible pages.</td><td>Respect media, realtime communication, accessibility, and web-platform timing contracts.</td></tr>
+        </tbody>
+      </table>
+      <p>Each candidate starts as trace replay or an experiment behind a feature flag. It ships only when it beats Chromium's existing Performance Manager at p50 and does not damage p95 latency, reload rate, correctness, or energy use.</p>
+    </section>
+    <section>
+      <h2>Immediate next slice</h2>
+      <ol>
+        <li>Install full Xcode and select it; Command Line Tools alone cannot build Chromium on this Mac.</li>
+        <li>Run the pinned bootstrap into <code>../minimal-chromium-workspace</code>.</li>
+        <li>Compile the unmodified performance build and run the identical market benchmark.</li>
+        <li>Add Minimal branding and the smallest browser-shell patch, then measure again before resource-policy changes.</li>
+        <li>Bring up the same pinned source on Windows before product features diverge.</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>

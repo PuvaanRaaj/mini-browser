@@ -57,6 +57,7 @@ const ARTIFACTS: Record<Platform, string | null> = {
 };
 
 const HTML_TEMPLATE = await Bun.file(join(import.meta.dir, "index.html")).text();
+const CHANGELOG_TEMPLATE = await Bun.file(join(import.meta.dir, "changelog.html")).text();
 
 function pageFor(userAgent: string, override: string | null): Response {
   const os =
@@ -111,6 +112,14 @@ Bun.serve({
         return pageFor(
           req.headers.get("user-agent") ?? "",
           url.searchParams.get("os"),
+        );
+      case "/changelog":
+      case "/changelog/":
+        return new Response(
+          CHANGELOG_TEMPLATE
+            .replaceAll("__VERSION__", VERSION)
+            .replaceAll("__SITE_URL__", SITE_URL),
+          { headers: { "Content-Type": "text/html; charset=utf-8" } },
         );
       case "/icon.svg":
         return new Response(Bun.file(join(ROOT, "resources/icon.svg")), {

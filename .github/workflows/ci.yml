@@ -50,4 +50,8 @@ jobs:
           test -s public/og.png
           test -s public/robots.txt
           test -s public/sitemap.xml
-          ! grep -q '__SITE_URL__\|__VERSION__' public/index.html
+          test -s public/changelog/index.html
+          VERSION="$(node -p "require('./package.json').version")"
+          grep -q "v${VERSION}" public/index.html
+          grep -q "Version ${VERSION}" public/changelog/index.html
+          ! grep -R -q '__SITE_URL__\|__VERSION__' public/index.html public/changelog/index.html public/sitemap.xml

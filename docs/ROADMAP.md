@@ -5,7 +5,9 @@ This roadmap keeps the browser fast while making releases predictable. The GitHu
 ## Versioning contract
 
 - **1.x** — the current Electron build. The next tagged release is **1.0.0**.
-- **2.0** — reserved. The Rust/native-shell rewrite is shelved while the Chromium app is hardened and measured. Reconsider it only if the 1.x benchmark budgets cannot be met without replacing the core.
+- **2.0** — the standalone Chromium distribution. The Rust/native-shell rewrite remains shelved. Electron 1.x stays supported until Chromium 2.x passes the same functional, security, migration, and performance gates on macOS and Windows.
+
+The pinned source/build contract lives in `chromium/manifest.json`. The large Chromium checkout stays outside this repository and is never allowed to float on `main`.
 
 ## 1. Measure before changing behavior
 

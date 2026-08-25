@@ -81,3 +81,9 @@ export type LayoutRect = {
   height: number;
   visible: boolean;
 };
+
+export type PageCapture = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};

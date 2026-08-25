@@ -1,0 +1,86 @@
+name: Build standalone Chromium for macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      clean_after_build:
+        description: "Delete the remote Chromium checkout after uploading the artifact"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chromium-macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build optimized Chromium arm64
+    runs-on: [self-hosted, macOS, ARM64, remote-minimal-chromium]
+    timeout-minutes: 1440
+    env:
+      MINIMAL_CHROMIUM_WORKSPACE: ${{ vars.MINIMAL_CHROMIUM_WORKSPACE || format('{0}/../minimal-chromium-workspace', github.workspace) }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Ensure Xcode Metal compiler
+        run: |
+          set -euo pipefail
+          if ! xcrun --find metal >/dev/null 2>&1; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+          xcrun metal --version
+
+      - name: Verify remote runner capacity
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "arm64"
+          npm run chromium:doctor
+
+      - name: Bootstrap pinned Chromium source
+        run: npm run chromium:bootstrap
+
+      - name: Generate optimized build
+        run: npm run chromium:gen
+
+      - name: Build Chromium
+        run: npm run chromium:build
+
+      - name: Verify and package app
+        run: |
+          set -euo pipefail
+          app="${MINIMAL_CHROMIUM_WORKSPACE}/src/out/MinimalPerformance/Chromium.app"
+          executable="${app}/Contents/MacOS/Chromium"
+          test -x "${executable}"
+          "${executable}" --version
+          codesign --force --deep --sign - "${app}"
+          codesign --verify --deep --strict "${app}"
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "${app}" artifacts/Minimal-Chromium-mac-arm64.zip
+
+      - name: Upload Chromium app
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimal-chromium-mac-arm64-${{ github.sha }}
+          path: artifacts/Minimal-Chromium-mac-arm64.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Clean remote Chromium workspace
+        if: ${{ always() && inputs.clean_after_build }}
+        run: |
+          set -euo pipefail
+          workspace="${MINIMAL_CHROMIUM_WORKSPACE}"
+          workspace="$(cd "$(dirname "${workspace}")" && pwd -P)/$(basename "${workspace}")"
+          if [[ ! -e "${workspace}" ]]; then
+            exit 0
+          fi
+          if [[ "${workspace}" == "/" || "${workspace}" == "${GITHUB_WORKSPACE}" || ( ! -f "${workspace}/.gclient" && ! -d "${workspace}/depot_tools" ) ]]; then
+            echo "Refusing unsafe cleanup target: ${workspace}" >&2
+            exit 1
+          fi
+          find "${workspace}" -depth -delete

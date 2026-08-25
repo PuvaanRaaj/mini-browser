@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "product": "Minimal",
+  "chromiumVersion": "152.0.7977.54",
+  "chromiumRevision": "24072c1aa400ec4a89dc738b6b6acd12a8589b6f",
+  "sourceRepository": "https://chromium.googlesource.com/chromium/src.git",
+  "depotToolsRepository": "https://chromium.googlesource.com/chromium/tools/depot_tools.git",
+  "minimumFreeDiskGb": 180,
+  "buildDirectory": "out/MinimalPerformance",
+  "buildTarget": "chrome",
+  "argsFile": "chromium/args/performance.gn"
+}

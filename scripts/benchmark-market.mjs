@@ -12,6 +12,17 @@ const outputDir = resolve(process.env.MINIMAL_BENCHMARK_DIR ?? ".benchmarks");
 await mkdir(outputDir, { recursive: true });
 
 const candidates = [
+  ...(process.env.MINIMAL_CHROMIUM_EXECUTABLE ? [{
+    browser: "Minimal Chromium",
+    executable: resolve(process.env.MINIMAL_CHROMIUM_EXECUTABLE),
+    args: (profile, urls) => [
+      `--user-data-dir=${profile}`,
+      "--no-first-run",
+      "--disable-default-apps",
+      "--disable-background-networking",
+      ...urls,
+    ],
+  }] : []),
   {
     browser: "Google Chrome",
     executable: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",

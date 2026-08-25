@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="robots" content="index, follow" />
+    <title>Changelog — Minimal Browser</title>
+    <meta name="description" content="Release history and development status for Minimal Browser." />
+    <link rel="canonical" href="__SITE_URL__/changelog/" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <style>
+      :root { --bg: #0a0a0b; --panel: #121214; --border: #29292e; --text: #fafafa; --muted: #a1a1aa; --dim: #71717a; --green: #4ade80; --amber: #fbbf24; --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+      * { box-sizing: border-box; }
+      html { color-scheme: dark; }
+      body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.65; }
+      a { color: inherit; }
+      .wrap { width: min(880px, calc(100% - 40px)); margin: 0 auto; }
+      nav { border-bottom: 1px solid var(--border); background: rgba(10,10,11,.86); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 2; }
+      .nav-inner { height: 60px; display: flex; align-items: center; justify-content: space-between; }
+      .brand { display: flex; align-items: center; gap: 9px; text-decoration: none; font-weight: 650; }
+      .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 14px; }
+      .nav-links a { text-decoration: none; }
+      .nav-links a:hover { color: var(--text); }
+      header { padding: 76px 0 40px; }
+      .kicker, .version { font-family: var(--mono); font-size: 12px; }
+      .kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+      h1 { margin: 10px 0 14px; font-size: clamp(42px, 8vw, 72px); letter-spacing: -.045em; line-height: 1; }
+      .intro { max-width: 58ch; color: var(--muted); font-size: 17px; }
+      .release { border-top: 1px solid var(--border); padding: 42px 0 54px; }
+      .release-head { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+      h2 { margin: 0; font-size: 28px; letter-spacing: -.025em; }
+      h3 { margin: 30px 0 10px; font-size: 16px; }
+      .status { border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--amber); background: var(--panel); }
+      .status.current { color: var(--green); }
+      ul { margin: 10px 0 0; padding-left: 22px; color: var(--muted); }
+      li { margin: 8px 0; }
+      code { font-family: var(--mono); font-size: .9em; background: var(--panel); padding: 2px 6px; border-radius: 5px; }
+      .notice { margin: 22px 0 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); color: var(--muted); }
+      footer { border-top: 1px solid var(--border); padding: 34px 0 50px; color: var(--dim); font-size: 13px; }
+      @media (max-width: 560px) { header { padding-top: 52px; } .nav-links a:last-child { display: none; } }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="wrap nav-inner">
+        <a class="brand" href="/">
+          <svg width="21" height="21" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="228" fill="#161616" stroke="#2c2c30"/><circle cx="512" cy="512" r="236" fill="none" stroke="#fff" stroke-width="28"/></svg>
+          Minimal
+        </a>
+        <div class="nav-links"><a href="/">Home</a><a href="https://github.com/PuvaanRaaj/mini-browser">GitHub ↗</a></div>
+      </div>
+    </nav>
+    <main class="wrap">
+      <header>
+        <p class="kicker">Version history</p>
+        <h1>Changelog</h1>
+        <p class="intro">Every notable product, security, performance, and delivery change. Development versions are labelled clearly and are not presented as downloadable releases.</p>
+      </header>
+
+      <article class="release" id="v2">
+        <div class="release-head"><h2>Version 2.0.0</h2><span class="status version">Unreleased · Chromium rewrite</span></div>
+        <h3>Standalone Chromium core</h3>
+        <ul>
+          <li>Pinned Chromium 152.0.7977.54 to an exact revision with deterministic macOS and Windows bootstrap, sync, GN, and build tooling.</li>
+          <li>Added seven-run release gates for startup, navigation, ten-tab RAM, idle CPU, controlled energy use, compatibility, and security.</li>
+          <li>Extended the clean-profile market benchmark for direct Minimal Chromium, Chrome, and Firefox comparisons.</li>
+          <li>Kept Electron 1.x as the fallback until 2.x passes profile migration, authentication, signing, update, and rollback tests.</li>
+        </ul>
+        <h3>Security, Google authentication, passkeys, and vault</h3>
+        <ul>
+          <li>Hardened IPC sender checks, renderer sandboxing, navigation, permissions, sessions, and external URL handling.</li>
+          <li>Added system-browser OAuth/PKCE for Minimal-owned Google integrations; embedded Electron Google website login is not claimed as supported.</li>
+          <li>Added WebAuthn account selection and the macOS platform-authenticator path, with Windows Hello and roaming security keys in the cross-platform plan.</li>
+          <li>Moved passwords and TOTP secrets to an asynchronous OS-encrypted main-process vault and migrated legacy authenticator entries.</li>
+          <li>Added local active-page QR capture for Authenticator with drag selection, account review, and ephemeral image handling.</li>
+        </ul>
+        <h3>Performance and reliability</h3>
+        <ul>
+          <li>Added cold/warm startup, first-navigation, ten-tab memory, and idle CPU benchmarks.</li>
+          <li>Prevented malformed block rules from cancelling main-frame navigation and corrected Vercel and renderer type-check failures.</li>
+          <li>Shelved the Rust/native-shell experiment in favour of the complete Chromium browser distribution.</li>
+        </ul>
+      </article>
+
+      <article class="release" id="v1">
+        <div class="release-head"><h2>Version __VERSION__</h2><span class="status current version">Current source build</span></div>
+        <p class="notice">The source currently reports v__VERSION__. No signed GitHub release has been published yet, so the website does not describe this as a signed production release.</p>
+        <h3>Browser experience</h3>
+        <ul>
+          <li>Introduced the Minimal name, ring icon, chromeless window, compact address bar, focus mode, keyboard navigation, and animated start page.</li>
+          <li>Added side tabs, hover-expandable icon rail, drag reordering, favicons, favorites and editing, per-site zoom, and session settings.</li>
+          <li>Added navigation, new-tab, focus, shield, password, authenticator, and settings controls plus the full dark palette and optional animated toolbar cats.</li>
+        </ul>
+        <h3>Privacy and authentication</h3>
+        <ul>
+          <li>Added EasyList/EasyPrivacy blocking, a built-in host blocklist, TOTP authenticator, and portable JSON or <code>otpauth://</code> backup import.</li>
+          <li>Made sessions ephemeral by default and added an explicit, off-by-default “Stay signed in” setting.</li>
+        </ul>
+        <h3>Stability, packaging, and website</h3>
+        <ul>
+          <li>Fixed WebContentsView shutdown crashes, dead tabs, WSL2 blocklist failures, favicon sizing, and navigation errors.</li>
+          <li>Added bundle budgets, lazy loading, cached blocklists, diagnostics, macOS and Windows packaging, release automation, Vercel deployment, SEO, and platform-aware downloads.</li>
+          <li>Published the project under Apache-2.0 with contributor and roadmap documentation.</li>
+        </ul>
+      </article>
+    </main>
+    <footer><div class="wrap">Minimal v__VERSION__ · <a href="https://github.com/PuvaanRaaj/mini-browser/blob/main/CHANGELOG.md">View the repository changelog</a></div></footer>
+  </body>
+</html>
