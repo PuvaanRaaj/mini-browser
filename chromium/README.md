@@ -33,3 +33,20 @@ MINIMAL_CHROMIUM_EXECUTABLE=../minimal-chromium-workspace/src/out/MinimalPerform
 
 Do not add speculative flags or remove sandbox/security features for speed.
 Runtime changes require repeatable performance evidence plus browser tests.
+
+## Remote macOS build
+
+GitHub's standard and larger hosted macOS runners expose only 14 GB of SSD,
+which is below this project's 180 GB preflight floor. The manual
+`chromium-macos.yml` workflow therefore targets a remote self-hosted Apple
+Silicon Mac with these labels:
+
+```text
+self-hosted, macOS, ARM64, remote-minimal-chromium
+```
+
+The remote runner needs full Xcode, at least 180 GB free, and should be a cloud
+or dedicated build machine—not a contributor's daily-use laptop. Set the
+optional repository variable `MINIMAL_CHROMIUM_WORKSPACE` when its large build
+volume is outside the runner work directory. The workflow uploads a seven-day
+artifact and deletes the remote checkout by default after the upload succeeds.
