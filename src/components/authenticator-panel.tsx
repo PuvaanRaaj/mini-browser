@@ -1,7 +1,8 @@
-import { FileUpIcon, KeyRoundIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { FileUpIcon, KeyRoundIcon, PlusIcon, ScanLineIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AddAccountDialog } from "@/components/add-account-dialog";
+import { QrScreenshotDialog } from "@/components/qr-screenshot-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,6 +10,7 @@ import { createDemoAccount, useAccounts } from "@/lib/accounts";
 import { parseAuthenticatorBackup } from "@/lib/import-backup";
 import { accountTitle } from "@/lib/totp";
 import type { PasswordEntry } from "@/lib/vault-types";
+import type { PageCapture } from "@/lib/types";
 
 export function AuthenticatorPanel({ onClose, activeUrl }: { onClose: () => void; activeUrl: string }) {
   const { accounts, status, error, importAccounts, remove } = useAccounts();
@@ -17,6 +19,8 @@ export function AuthenticatorPanel({ onClose, activeUrl }: { onClose: () => void
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [capture, setCapture] = useState<PageCapture | null>(null);
+  const [capturing, setCapturing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const importBackup = async (file: File) => {
@@ -105,6 +109,26 @@ export function AuthenticatorPanel({ onClose, activeUrl }: { onClose: () => void
           <FileUpIcon />
           Import
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!status.available || capturing || !window.mini}
+          onClick={() => {
+            if (!window.mini) return;
+            setCapturing(true);
+            setImportMessage(null);
+            void window.mini.captureActivePage().then(
+              setCapture,
+              (caught) => setImportMessage(messageOf(caught)),
+            ).finally(() => setCapturing(false));
+          }}
+          data-agent="scan-2fa-qr"
+          aria-label="Capture active page to scan a QR code"
+          title="Scan QR from active page"
+        >
+          <ScanLineIcon />
+          {capturing ? "Capturing…" : "Scan QR"}
+        </Button>
         <Button data-agent="add-2fa-account" size="icon-sm" disabled={!status.available} onClick={() => setDialogOpen(true)} aria-label="Add account">
           <PlusIcon />
         </Button>
@@ -185,6 +209,17 @@ export function AuthenticatorPanel({ onClose, activeUrl }: { onClose: () => void
         onOpenChange={setDialogOpen}
         onAdd={(account) => void importAccounts([account])}
       />
+      {capture ? (
+        <QrScreenshotDialog
+          capture={capture}
+          onClose={() => setCapture(null)}
+          onImport={async (account) => {
+            const imported = await importAccounts([account]);
+            setImportMessage(imported === 1 ? `Imported ${accountTitle(account)}.` : "That account is already present.");
+            setCapture(null);
+          }}
+        />
+      ) : null}
       </> : <PasswordManager activeUrl={activeUrl} available={status.available} />}
     </aside>
   );

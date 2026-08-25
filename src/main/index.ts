@@ -151,6 +151,11 @@ app.whenReady().then(() => {
     if (!mini) throw new Error("Minimal is not running.");
     return mini.handle(command);
   });
+  ipcMain.handle("mini:capture-active-page", async (event) => {
+    assertTrustedRenderer(event);
+    if (!mini) throw new Error("Minimal is not running.");
+    return mini.captureActivePage();
+  });
   ipcMain.on("mini:layout", (event, rect: LayoutRect) => {
     if (!isTrustedRenderer(event)) return;
     mini?.applyLayout(rect);

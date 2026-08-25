@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-import type { BrowserCommand, BrowserState, LayoutRect } from "../lib/types";
+import type { BrowserCommand, BrowserState, LayoutRect, PageCapture } from "../lib/types";
 import type { AuthenticatorAccount } from "../lib/totp";
 import type { GoogleAuthAPI, PasswordInput, VaultAPI } from "../lib/vault-types";
 
@@ -28,6 +28,7 @@ const mini = {
   ready: (): Promise<BrowserState | null> => ipcRenderer.invoke("mini:ready"),
   command: (command: BrowserCommand): Promise<BrowserState> =>
     ipcRenderer.invoke("mini:command", command),
+  captureActivePage: (): Promise<PageCapture> => ipcRenderer.invoke("mini:capture-active-page"),
   layout: (rect: LayoutRect): void => {
     ipcRenderer.send("mini:layout", rect);
   },

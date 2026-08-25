@@ -32,6 +32,9 @@ marked as unreleased.
 - Moved passwords and TOTP secrets from renderer storage into an asynchronous,
   OS-encrypted main-process vault that fails closed when encryption is absent.
 - Added migration of legacy authenticator entries into the secure vault.
+- Added on-demand active-page QR capture for Authenticator: users drag around a
+  TOTP QR code, review the decoded account, and import it locally. Captured
+  image data is discarded when the dialog closes.
 
 ### Reliability and delivery
 

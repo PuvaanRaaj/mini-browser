@@ -1,4 +1,4 @@
-import type { BrowserCommand, BrowserState, LayoutRect } from "../lib/types";
+import type { BrowserCommand, BrowserState, LayoutRect, PageCapture } from "../lib/types";
 import type { GoogleAuthAPI, VaultAPI } from "../lib/vault-types";
 
 declare global {
@@ -9,6 +9,7 @@ declare global {
       googleAuth: GoogleAuthAPI;
       ready: () => Promise<BrowserState | null>;
       command: (command: BrowserCommand) => Promise<BrowserState>;
+      captureActivePage: () => Promise<PageCapture>;
       layout: (rect: LayoutRect) => void;
       chromeTheme: (theme: "light" | "dark") => void;
       persistSession: (enabled: boolean) => void;

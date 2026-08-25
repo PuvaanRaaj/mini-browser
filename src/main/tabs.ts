@@ -13,7 +13,7 @@ import {
 
 import { enableAdblock } from "./adblock";
 import { navigationErrorCode, navigationErrorMessage } from "../lib/navigation-error";
-import type { BrowserCommand, BrowserState, LayoutRect, TabInfo } from "../lib/types";
+import type { BrowserCommand, BrowserState, LayoutRect, PageCapture, TabInfo } from "../lib/types";
 import { hostnameOf, resolveNavigation } from "../lib/url";
 import {
   chromiumUserAgent,
@@ -211,6 +211,15 @@ export class MiniSession {
   async agentScreenshot(tabId?: string): Promise<Buffer> {
     const image = await this.agentView(tabId).webContents.capturePage();
     return image.toPNG();
+  }
+
+  async captureActivePage(): Promise<PageCapture> {
+    const image = await this.agentView().webContents.capturePage(undefined, { stayHidden: true });
+    const size = image.getSize();
+    if (size.width < 1 || size.height < 1 || image.isEmpty()) {
+      throw new Error("The active page could not be captured.");
+    }
+    return { dataUrl: image.toDataURL(), width: size.width, height: size.height };
   }
 
   async fillPassword(entry: { origin: string; username: string; password: string }): Promise<void> {
