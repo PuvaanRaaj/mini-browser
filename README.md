@@ -57,13 +57,17 @@ npm run dist:mac
 npm run open:mac
 ```
 
+Without `MINIMAL_APPLE_TEAM_ID`, this produces an unsigned local build with
+Touch ID passkeys disabled. Signed releases require a valid Apple Developer
+Team ID and matching signing identity.
+
 Windows (x64):
 
 ```powershell
 npm run dist:win
 ```
 
-Release artifacts are written to `release/`. Signed Touch ID builds require a valid Apple Developer Team ID through `MINIMAL_APPLE_TEAM_ID`.
+Release artifacts are written to `release/`.
 
 ## Authenticator and passwords
 

@@ -42,6 +42,8 @@ marked as unreleased.
 - Added repeatable cold/warm startup, first-navigation, ten-tab memory, and idle
   CPU benchmarks.
 - Corrected the Vercel build runtime and renderer type-check configuration.
+- Allowed reproducible unsigned macOS packages when no Apple Team ID is
+  configured, while keeping Touch ID entitlements restricted to signed builds.
 
 ## 1.0.0 — Current Electron source version
 
