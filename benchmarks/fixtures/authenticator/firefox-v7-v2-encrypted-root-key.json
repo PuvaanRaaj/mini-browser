@@ -1,0 +1,13 @@
+{
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+    "encrypted": true,
+    "hash": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "index": 0,
+    "type": "totp",
+    "secret": "U2FsdGVkX18shLoUOQZo88lsjf/6YhJ9TKgUVbPfw+DCSbyy6M6J9/V0PKr5oEBf",
+    "issuer": "Example",
+    "account": "alice@example.test"
+  },
+  "enc": "U2FsdGVkX19NnsRUSCycGfH6yv3twBQ9Xt/cMC5g/Ggo1sb4NO+XainyZBnkjIFQ/qqEgQebiLZgNx0UJiNZimzmvpxYD41DWC8xOgyWITcRvcyBCy3eH/lZmKpug47hUvmMHnyeSuXj70IpWAhIu9R1Jrdv79L8HWkiFlsg5EdmE2GTrMorP2OXq+gBwy9n",
+  "hash": "$argon2id$v=19$m=16384,t=1,p=1$bGVnYWN5LXYyLXNhbHQhIQ$utot6J7Civg/0RJvscLS3urkb/+TIvA0"
+}

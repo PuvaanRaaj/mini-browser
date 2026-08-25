@@ -1,0 +1,27 @@
+{
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+    "encrypted": true,
+    "hash": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "index": 0,
+    "type": "totp",
+    "secret": "U2FsdGVkX18shLoUOQZo88lsjf/6YhJ9TKgUVbPfw+DCSbyy6M6J9/V0PKr5oEBf",
+    "issuer": "Example",
+    "account": "alice@example.test"
+  },
+  "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+    "encrypted": true,
+    "hash": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "index": 1,
+    "type": "hotp",
+    "secret": "U2FsdGVkX18wcOOtGaGwmWF9gGZ4TSla33s82gmIo24FbrtbT1EURcD9aSDY2LH+",
+    "issuer": "Counter Example",
+    "account": "bob",
+    "counter": 7,
+    "digits": 8,
+    "algorithm": "SHA256"
+  },
+  "key": {
+    "enc": "U2FsdGVkX19NnsRUSCycGfH6yv3twBQ9Xt/cMC5g/Ggo1sb4NO+XainyZBnkjIFQ/qqEgQebiLZgNx0UJiNZimzmvpxYD41DWC8xOgyWITcRvcyBCy3eH/lZmKpug47hUvmMHnyeSuXj70IpWAhIu9R1Jrdv79L8HWkiFlsg5EdmE2GTrMorP2OXq+gBwy9n",
+    "hash": "$argon2id$v=19$m=16384,t=1,p=1$bGVnYWN5LXYyLXNhbHQhIQ$utot6J7Civg/0RJvscLS3urkb/+TIvA0"
+  }
+}

@@ -25,6 +25,21 @@ const SITE_URL = (process.env.SITE_URL ?? "https://mini-browser-v2.vercel.app").
 const RELEASES_URL = `${GITHUB}/releases`;
 const RELEASES_DIR = join(ROOT, "release");
 
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; frame-ancestors 'none'; base-uri 'self'",
+};
+
+function headers(contentType: string, cacheControl: string) {
+  return {
+    ...SECURITY_HEADERS,
+    "Content-Type": contentType,
+    "Cache-Control": cacheControl,
+  };
+}
+
 export type Platform = "mac" | "windows" | "linux";
 
 export function detectPlatform(userAgent: string): Platform {
@@ -68,7 +83,7 @@ function pageFor(userAgent: string, override: string | null): Response {
     .replaceAll("__VERSION__", VERSION)
     .replaceAll("__SITE_URL__", SITE_URL);
   return new Response(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: headers("text/html; charset=utf-8", "no-cache"),
   });
 }
 
@@ -84,7 +99,9 @@ function downloadFor(req: Request): Response {
   if (artifact) {
     return new Response(Bun.file(join(RELEASES_DIR, artifact)), {
       headers: {
+        ...SECURITY_HEADERS,
         "Content-Type": "application/octet-stream",
+        "Cache-Control": "no-store",
         "Content-Disposition": `attachment; filename="${artifact}"`,
       },
     });
@@ -97,7 +114,7 @@ function downloadFor(req: Request): Response {
       : RELEASES_URL;
   return new Response(null, {
     status: 302,
-    headers: { Location: ghAsset },
+    headers: { ...SECURITY_HEADERS, Location: ghAsset, "Cache-Control": "no-store" },
   });
 }
 
@@ -114,38 +131,41 @@ Bun.serve({
         );
       case "/icon.svg":
         return new Response(Bun.file(join(ROOT, "resources/icon.svg")), {
-          headers: { "Content-Type": "image/svg+xml" },
+          headers: headers("image/svg+xml", "public, max-age=86400"),
         });
       case "/icon.png":
         return new Response(Bun.file(join(ROOT, "resources/icon.png")), {
-          headers: { "Content-Type": "image/png" },
+          headers: headers("image/png", "public, max-age=86400"),
         });
       case "/og.png":
         return new Response(Bun.file(join(import.meta.dir, "og.png")), {
-          headers: { "Content-Type": "image/png" },
+          headers: headers("image/png", "public, max-age=86400"),
         });
       case "/robots.txt": {
         const text = await Bun.file(join(import.meta.dir, "robots.txt")).text();
         return new Response(text.replaceAll("__SITE_URL__", SITE_URL), {
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
+          headers: headers("text/plain; charset=utf-8", "public, max-age=3600"),
         });
       }
       case "/sitemap.xml": {
         const text = await Bun.file(join(import.meta.dir, "sitemap.xml")).text();
         return new Response(text.replaceAll("__SITE_URL__", SITE_URL), {
-          headers: { "Content-Type": "application/xml; charset=utf-8" },
+          headers: headers("application/xml; charset=utf-8", "public, max-age=3600"),
         });
       }
       case "/api/os":
-        return Response.json({
+        return new Response(JSON.stringify({
           os: detectPlatform(req.headers.get("user-agent") ?? ""),
           version: VERSION,
           artifacts: ARTIFACTS,
-        });
+        }), { headers: headers("application/json; charset=utf-8", "no-store") });
       case "/download/latest":
         return downloadFor(req);
       default:
-        return new Response("Not found", { status: 404 });
+        return new Response("Not found", {
+          status: 404,
+          headers: headers("text/plain; charset=utf-8", "no-store"),
+        });
     }
   },
 });

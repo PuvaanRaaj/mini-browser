@@ -1,0 +1,21 @@
+{
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": {
+    "dataType": "EncOTPStorage",
+    "data": "U2FsdGVkX18fwyunjyvRC5BZhg6fvkXzha08IleRJTqFP54drwKRbASK2UIExlUZOVFnhiYWCnuqVSTtn7FlRhhIr/5B1jtMm9AHOT7YTHgW/zvQWxv98jPxPdw25YhOYRgMQsIAP6M5HtMBCQTVXkHeIODvVcd66zL8EjZZIuebo4dA/plm1qqK7TD1Wi3BuXFx48RcD03ouYOKBmwHO4QYEI+UFJIpO16gPtLOqgm4Ux90B9s9tmJ0J59HuxI7GOcEvKGO0PXzge3abtOJLL9f3IaijnS4+A0JbVf55LSWoH4tFHmKCXhqY9+hxtMiaM+H4omkPeDhSfWsrYntAw==",
+    "keyId": "11111111-1111-4111-8111-111111111111",
+    "index": 0
+  },
+  "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+    "dataType": "EncOTPStorage",
+    "data": "U2FsdGVkX1/3RLWP31Tbnz69ksUIuxFKOkxttvMoQ7NJBEb+WlQf5SsOlLB3nZz1WcNxIGu4b58QS8HTufUHnIVwZV+EjRyvlTnWeqZnw7yKrCCimJ9T0YUndnWc6oO+CX43tVWvh/Ac0CxLWNKk14YOihoT+bHlgZOjwFM5DyfpTitUjYo1caf8QfCEwrAhbc1B6rZAmvbC9xARRQYJ/ovH2P12y0aIZJrIXewvcDZQcMyO6ZMNT+j4I5bnHmZ2YifwXf00dGH3bNaZg22ZeKe7cd6bxKk7/nQOliucpK5HmElQ6Ap2wcPjE9NNqOGuyUz5d0lZFI2ZESR0m3Io1MbBJBAqCW8hC4A5grrvAuauUC+g0svPNRo1b4rvMo+QQcuPQW1qtBbt0nZkPQgklQ==",
+    "keyId": "11111111-1111-4111-8111-111111111111",
+    "index": 1
+  },
+  "11111111-1111-4111-8111-111111111111": {
+    "dataType": "Key",
+    "id": "11111111-1111-4111-8111-111111111111",
+    "salt": "0123456789abcdef0123456789abcdef",
+    "hash": "$argon2id$v=19$m=19456,t=2,p=1$ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA$DAynXS8OtDcmgPJngr/4ueLj4EDHbCEN47CaCxtl6/k",
+    "version": 3
+  }
+}
